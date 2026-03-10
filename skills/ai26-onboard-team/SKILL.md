@@ -435,7 +435,146 @@ git push
 
 ---
 
-## Step 11 — Verify setup
+## Step 11 — Generate `CLAUDE.md` and `AGENTS.md`
+
+With `ai26/config.yaml` and `ai26/context/DOMAIN.md` complete, generate the
+instruction files that AI assistants read on every session.
+
+Ask only what is still missing:
+
+    One last thing before we finish — I'll generate CLAUDE.md and AGENTS.md
+    so that Claude Code and other AI assistants are oriented from the start.
+
+    I need one line describing the service in business terms:
+    e.g. "Customer support conversation routing service for N26 mobile banking"
+
+    What does this service do?
+
+Then show the draft for both files. `CLAUDE.md` is for Claude Code;
+`AGENTS.md` is for Codex and other non-Claude agents — same content, different header.
+
+Template for `CLAUDE.md`:
+
+```markdown
+# CLAUDE.md — {project_name}
+
+This file is read automatically by Claude Code at startup.
+
+---
+
+## Project
+
+{one_line_description}
+
+Stack: {stack.language} + {stack.framework}. {architecture_note}.
+
+## Source of truth
+
+```
+ai26/config.yaml                    ← coding rules, project structure, team conventions
+docs/architecture/manifest.yaml     ← service metadata
+docs/architecture/modules/{module}/ ← accumulated domain docs per module
+```
+
+Read `ai26/config.yaml` → `coding_rules` before writing any code.
+
+## Skills
+
+This project uses a skill system. Every non-trivial code generation task has a skill.
+**Always prefer invoking a skill over writing code directly.**
+
+Invoke with `/{skill-name} [arguments]`.
+
+Available skills are listed in the AI26 plugin. Run `/ai26-start-sdlc` to begin.
+
+## Commits
+
+All commit messages must start with the Jira ticket ID:
+
+    {JIRA-ID} description
+
+Example: `{jira_project}-42 add payment aggregate`
+
+## Hard rules
+
+All rules are defined in `ai26/config.yaml` → `coding_rules`. Read them before writing code.
+Key IDs to remember: CC-01, CC-02, CC-03, D-01, D-02, D-08, D-09, T-01, T-07.
+
+## Build
+
+```bash
+{build_command_compile}
+{build_command_test}
+```
+```
+
+Template for `AGENTS.md`:
+
+```markdown
+# AGENTS.md — {project_name}
+
+This file is read by Codex and other non-Claude agents. Claude Code users should see `CLAUDE.md`.
+
+---
+
+## Project
+
+{one_line_description}
+
+Stack: {stack.language} + {stack.framework}. {architecture_note}.
+
+## Source of truth
+
+```
+ai26/config.yaml                    ← coding rules, project structure, team conventions
+docs/architecture/manifest.yaml     ← service metadata
+docs/architecture/modules/{module}/ ← accumulated domain docs per module
+```
+
+Read `ai26/config.yaml` → `coding_rules` before writing any code.
+
+## Skills
+
+This project uses a skill system. Every non-trivial code generation task has a skill.
+**Always prefer invoking a skill over writing code directly.**
+
+## Commits
+
+All commit messages must start with the Jira ticket ID:
+
+    {JIRA-ID} description
+
+Example: `{jira_project}-42 add payment aggregate`
+
+## Hard rules
+
+All rules are defined in `ai26/config.yaml` → `coding_rules`. Read them before writing code.
+```
+
+Fill placeholders from what was gathered in earlier steps:
+
+| Placeholder | Source |
+|---|---|
+| `{project_name}` | Repository name or service name from Step 2 |
+| `{one_line_description}` | Answer given above |
+| `{stack.language}`, `{stack.framework}` | `ai26/config.yaml → stack` |
+| `{architecture_note}` | e.g. "Clean Architecture + DDD, multi-module Gradle build" — inferred from Step 2 scan |
+| `{module}` | Active module name from `ai26/config.yaml → modules` |
+| `{jira_project}` | Jira project key from Step 1 check (Jira MCP) |
+| `{build_command_compile}` | e.g. `./gradlew service:compileKotlin` — inferred from stack |
+| `{build_command_test}` | e.g. `./gradlew service:test` — inferred from stack |
+
+Wait for confirmation. Write both files and commit:
+
+```
+git add CLAUDE.md AGENTS.md
+git commit -m "chore: add CLAUDE.md and AGENTS.md"
+git push
+```
+
+---
+
+## Step 12 — Verify setup
 
 Run the full setup check:
 
@@ -449,6 +588,8 @@ Run the full setup check:
     ✓ ai26/context/INTEGRATIONS.md — found
     ✓ ai26/domain/ — {N} aggregates documented
     ✓ ai26/context/diagrams/ — C1 and C4 generated
+    ✓ CLAUDE.md — found
+    ✓ AGENTS.md — found
     ✓ Jira MCP — connected (project: {PROJECT})
     ✓ Git remote — origin configured
 
