@@ -4,6 +4,5 @@
   "description": "AI26 SDLC framework — Clean Architecture + DDD workflow for Kotlin/Spring Boot teams. Includes skills for design, implementation, validation, and promotion of user stories.",
   "author": {
     "name": "Ivan Llorente"
-  },
-  "skills": "../skills/"
+  }
 }
