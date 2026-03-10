@@ -1,0 +1,51 @@
+# rule-index.yaml
+# Maps coding rule IDs to the recipe files that document them.
+#
+# This is plugin metadata — identical for all teams using this plugin.
+# It does NOT belong in ai26/config.yaml (which is project-specific config).
+#
+# Rule IDs must match coding_rules in ai26/config.yaml.
+# Recipe filenames must match files in this directory (docs/coding-standards/recipes/).
+#
+# Consumed by: scripts/generate-coding-rules-doc.sh
+# Validated by: scripts/validate-coding-rules.sh (bidirectional check against front matter)
+
+CC-01: [domain.md]
+CC-02: [infrastructure.md, controllers.md]
+CC-03: [error-handling.md]
+CC-04: [repositories.md, error-handling.md]
+CC-05: [domain.md, use-cases.md, dto-design.md]
+D-01: [domain.md]
+D-02: [domain.md]
+D-03: [domain.md, error-handling.md]
+D-04: [domain.md]
+D-05: [domain.md, error-handling.md]
+D-06: [error-handling.md]
+D-07: [domain.md, domain-events.md]
+D-08: [domain.md]
+D-09: [domain.md]
+D-10: [domain.md, controllers.md]
+D-11: [domain.md]
+D-12: [domain.md]
+D-13: [domain.md, child-entities.md]
+D-14: [repositories.md, child-entities.md, use-cases.md]
+A-01: [use-cases.md, error-handling.md]
+A-02: [use-cases.md]
+A-03: [use-cases.md]
+A-04: [use-cases.md]
+A-05: [use-cases.md]
+A-06: [use-cases.md, error-handling.md]
+I-01: [controllers.md]
+I-02: [controllers.md, error-handling.md]
+I-03: [controllers.md]
+I-04: [infrastructure.md, outbound-adapters.md]
+I-05: [infrastructure.md, external-apis.md, messaging.md]
+I-06: [infrastructure.md, external-apis.md, messaging.md]
+T-01: [testing.md]
+T-02: [testing.md]
+T-03: [testing.md, mother-objects.md]
+T-04: [testing.md]
+T-05: [testing.md]
+T-06: [testing.md]
+T-07: [testing.md]
+T-08: [testing.md]
