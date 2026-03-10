@@ -194,6 +194,101 @@ version_control:
 
 ---
 
+### `coding_rules`
+
+The coding rules enforced by skills and reviewed by `ai26-review-user-story`.
+Pre-filled by `ai26-onboard-team` from the plugin — teams edit only when their
+project intentionally deviates from the standard.
+
+Rules are grouped by layer. Each entry is a rule ID and a one-liner description:
+
+```yaml
+coding_rules:
+  cross_cutting:
+    CC-01: "Domain layer: zero framework imports (org.springframework.*, jakarta.*, org.jooq.*)"
+    CC-02: "Infrastructure classes in inbound/ or outbound/ — nothing flat in infrastructure/"
+    # ...
+  domain:
+    D-01: "Aggregate root: class with private constructor — NOT data class"
+    # ...
+  application:
+    A-01: "Use case returns Either<SealedError, DTO> — never raw domain entities"
+    # ...
+  infrastructure:
+    I-01: "Controllers are humble objects — delegate to use case, no business logic"
+    # ...
+  testing:
+    T-01: "TestContainers only — never H2"
+    # ...
+```
+
+**Rule IDs are stable** — the text may be refined but the ID never changes.
+Skills reference rule IDs (e.g. `CC-01`, `D-09`) to cite which rule a generated
+pattern satisfies. `ai26-review-user-story` uses the full list to check compliance.
+
+#### Relationship to the plugin
+
+`coding_rules` in `config.yaml` is the **project-side** half of a two-part system:
+
+| File | Owner | Purpose |
+|---|---|---|
+| `ai26/config.yaml → coding_rules` | Project (developer's repo) | Defines which rules exist and their text. Customizable per team. |
+| `docs/coding-standards/recipes/rule-index.yaml` | Plugin | Maps each rule ID to the recipe file(s) that explain it. Identical across all teams. |
+
+The generator script (`scripts/generate-coding-rules-doc.sh`) reads both files
+and produces `docs/ai26-sdlc/reference/coding-rules.md`. See
+[Coding Rules Maintenance](#coding-rules-maintenance) below.
+
+#### Adding or changing a rule
+
+1. Edit `coding_rules` in `ai26/config.yaml` — add, change, or remove a rule ID.
+2. If adding a new rule, add it to `docs/coding-standards/recipes/rule-index.yaml`
+   and to the `rules:` front matter of the relevant recipe file(s).
+3. Run `./scripts/generate-coding-rules-doc.sh` to regenerate the reference table.
+4. Run `./scripts/validate-coding-rules.sh` to confirm everything is consistent.
+
+---
+
+### `coding_rules` maintenance scripts
+
+Two scripts in `scripts/` keep the coding rules system consistent.
+
+#### `scripts/generate-coding-rules-doc.sh`
+
+Generates `docs/ai26-sdlc/reference/coding-rules.md` from `ai26/config.yaml`
+and `docs/coding-standards/recipes/rule-index.yaml`.
+
+```bash
+# Regenerate the reference table
+./scripts/generate-coding-rules-doc.sh
+
+# CI mode — exits 1 if the file would change (use in pre-merge checks)
+./scripts/generate-coding-rules-doc.sh --check
+```
+
+The output file has a `<!-- GENERATED -->` header — do not edit it manually.
+
+#### `scripts/validate-coding-rules.sh`
+
+Checks bidirectional consistency across all three layers. Run after any change
+to `coding_rules`, `rule-index.yaml`, or recipe front matter.
+
+```bash
+./scripts/validate-coding-rules.sh
+```
+
+Checks performed:
+
+| Check | What it catches |
+|---|---|
+| Every rule has a recipe mapping | Rule added to config.yaml but not to rule-index.yaml |
+| Every recipe file exists | Typo in rule-index.yaml pointing to a non-existent file |
+| Every mapping has a valid rule ID | Orphaned entry in rule-index.yaml |
+| Front matter matches mapping (both directions) | Recipe front matter out of sync with rule-index.yaml |
+| No orphaned front matter | Recipe has `rules:` front matter but is not in rule-index.yaml |
+
+---
+
 ### `promotion`
 
 Controls where promoted artefacts land.

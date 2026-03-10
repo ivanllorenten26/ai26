@@ -1,4 +1,4 @@
-# Coding Standards — valium
+# Coding Standards
 
 Clean Architecture and DDD involve patterns that are not obvious the first time you encounter them — why the constructor is private, why the use case returns `Either` instead of throwing, why the controller has no `if` statements. Without written standards, these decisions get rediscovered (and sometimes reversed) by each new engineer, and the codebase drifts toward inconsistency. The cost is real: longer PR reviews arguing about patterns, regressions from violations that CI didn't catch, and onboarding that depends on finding the right person to ask.
 
@@ -52,17 +52,42 @@ Reading is necessary but not sufficient — the patterns stick when you use them
 
 ## How AI consumes these standards
 
-These documents are the **single source of truth**. From them, we derive compact instruction files and skills that AI assistants consume as context. The goal is that when you ask Copilot or Claude to write a use case, the output already respects the dependency rule, returns `Either`, uses primitive signatures, and places the file in the right layer — without you having to explain any of that in the prompt.
+These documents are the **single source of truth**. From them, we derive compact instruction files and skills that AI assistants consume as context. The goal is that when you ask Claude to write a use case, the output already respects the dependency rule, returns `Either`, uses primitive signatures, and places the file in the right layer — without you having to explain any of that in the prompt.
 
 This works through three layers:
 
 | Layer | What it does | Example |
 |---|---|---|
 | `docs/coding-standards/` | Full principles, reasoning, templates, anti-patterns — the source of truth | This document, Architecture Principles, How-To Cookbook |
-| Instruction files | Compact project summary — architecture, conventions, available skills. One per assistant (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`) | Small file, equivalent to `CLAUDE.md` |
-| Skills | Step-by-step workflows for complex tasks — implement a feature, review a PR, plan a spike. Defined per assistant (`.claude/skills/`, `.github/skills/`) | `/developer`, `/pr-reviewer`, `/planner` |
+| `ai26/config.yaml → coding_rules` | Compact rule list in the project's config file. Skills and `ai26-review-user-story` read this to enforce rules. Pre-filled by `ai26-onboard-team`. | `D-01: "Aggregate root: class with private constructor"` |
+| Skills (`skills/*/SKILL.md`) | Step-by-step workflows with inline templates and anti-patterns. Self-contained — no runtime dependency on recipe files. | `dev-create-aggregate`, `test-create-use-case-tests` |
 
-Instruction files and skills are **derived artifacts** — when a coding standard changes, the corresponding files update too. If you find an AI assistant generating code that contradicts the standards, the fix belongs in the instruction or skill definition, not in a prompt workaround.
+Skills and `coding_rules` are **derived artifacts** — when a coding standard changes, the corresponding skill and config entries update too. If you find Claude generating code that contradicts the standards, the fix belongs in the skill or rule definition, not in a prompt workaround.
+
+## Coding rules system
+
+Recipe files are the human-readable detail layer. They are connected to the rule ID system through two mechanisms:
+
+**`rule-index.yaml`** (in this directory) maps each rule ID to the recipe file(s) that document it. This is plugin metadata — identical across all teams using AI26.
+
+**Recipe front matter** mirrors the mapping:
+```yaml
+---
+rules: [D-01, D-02, D-04]
+---
+```
+
+**`docs/ai26-sdlc/reference/coding-rules.md`** is generated from `ai26/config.yaml` + `rule-index.yaml`. Do not edit it manually — run:
+```bash
+./scripts/generate-coding-rules-doc.sh
+```
+
+To check consistency across all three layers (config.yaml, rule-index.yaml, recipe front matter):
+```bash
+./scripts/validate-coding-rules.sh
+```
+
+See [`docs/ai26-sdlc/reference/configuration.md`](../ai26-sdlc/reference/configuration.md) for the full workflow.
 
 What this means for day-to-day work:
 
@@ -81,25 +106,19 @@ These are working documents, not museum pieces.
 - **Propose changes.** If a rule doesn't fit a real scenario, open a discussion — the resolution becomes an ADR in [`docs/adr/`](../adr/) and the standards update. Blindly following rules you disagree with erodes trust; proposing changes strengthens them.
 - **No blame for mistakes.** When a violation ships, it becomes a learning opportunity: add the failing test first, then fix. The standard improves if the violation revealed an unclear rule.
 
-## Related
-
-| Resource | Description |
-|---|---|
-| [N26 Hexagonal Architecture Onboarding Guide](https://backstage.tech26.de/docs/default/component/backend-docs/onboarding/guides-and-procedures/on-boarding-hexagonal-architecture/) | Company-wide introduction to Hexagonal Architecture (Ports & Adapters) — recommended reading for engineers new to the pattern |
-
 ## Technologies
+
+The default stack these standards are written for:
 
 | Category | Technology |
 |---|---|
 | Language | Kotlin |
 | Framework | Spring Boot |
-| Persistence | JOOQ |
+| Persistence | JOOQ (or JPA — configurable per module) |
 | Database | PostgreSQL |
-| Unit testing | JUnit 5 + MockK + Kotest |
+| Unit testing | JUnit 5 + MockK |
 | BDD | Gherkin docstrings (no framework) |
 | Integration testing | TestContainers |
 | Architecture testing | ArchUnit |
 
----
-
-**Scope:** standards apply to the `service/` module. The `application/` module is legacy (do not modify unless explicitly asked). The `persistence/` module is temporary and will be absorbed into `service/` — see [Project Structure](./project-structure.md) for details. The target state is a single module.
+Stack is configured per project in `ai26/config.yaml → stack`. Skills use this to select the correct code-generation templates.
