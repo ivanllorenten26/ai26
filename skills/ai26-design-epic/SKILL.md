@@ -148,6 +148,71 @@ Artefact filenames:
 - `glossary.yaml`
 - `scenarios/` (one `.feature` file per use case)
 - `ops-checklist.yaml`
+- `diagrams.md` (always — see Mermaid diagrams section below)
+
+### Mermaid diagrams (`diagrams.md`)
+
+Generate `diagrams.md` as the last artefact for every ticket. Include only the diagrams
+that add developer value for this specific ticket — skip diagram types with nothing
+meaningful to show (e.g. no sequence diagram for a ticket with no inter-component flow).
+
+**Diagram selection rules:**
+
+| Diagram type | Include when |
+|---|---|
+| Domain class diagram | Ticket introduces or modifies aggregates, entities, or value objects |
+| State machine diagram | Aggregate has a lifecycle with states and transitions |
+| Sequence diagram (use case) | Ticket has a use case that crosses two or more components (controller → use case → repository, or inter-context calls) |
+| Sequence diagram (event flow) | Ticket emits or consumes domain events |
+| Component diagram | Ticket introduces a new bounded context or a new external dependency |
+| ER diagram | Ticket has Flyway migrations that create or alter tables |
+
+**Format for `diagrams.md`:**
+
+```markdown
+# Diagrams — {TICKET-ID}: {title}
+
+## Domain class diagram
+
+```mermaid
+classDiagram
+  ...
+```
+
+## State machine — {AggregateName}
+
+```mermaid
+stateDiagram-v2
+  ...
+```
+
+## Sequence — {Use case name}
+
+```mermaid
+sequenceDiagram
+  ...
+```
+
+## Event flow — {EventName}
+
+```mermaid
+sequenceDiagram
+  ...
+```
+
+## ER diagram
+
+```mermaid
+erDiagram
+  ...
+```
+```
+
+**Naming conventions inside diagrams:**
+- Use actual class/field names from `domain-model.yaml` — no invented names.
+- In sequence diagrams, participants are: `Client`, `Controller`, `UseCase`, `Repository`, `EventPublisher`, `ExternalService` (use the real class names when known).
+- In state diagrams, states match the `ConversationStatus` / aggregate status enum values exactly.
+- In class diagrams, show only fields and methods defined in `domain-model.yaml` for this ticket — do not copy the full aggregate if only one method changed.
 
 Commit after each ticket (not after each artefact — one commit per ticket):
 
@@ -161,7 +226,8 @@ Show progress after each ticket:
 
     ✓ {TICKET-ID} — {title}
       domain-model.yaml, use-case-flows.yaml, error-catalog.yaml,
-      api-contracts.yaml, events.yaml, scenarios/ (N scenarios), ops-checklist.yaml
+      api-contracts.yaml, events.yaml, scenarios/ (N scenarios), ops-checklist.yaml,
+      diagrams.md (list diagram types generated)
       ADRs: {list or "none"}
       ──────────────────────────────
       {N-remaining} tickets remaining.

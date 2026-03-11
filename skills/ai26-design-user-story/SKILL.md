@@ -230,6 +230,80 @@ Commit messages per artefact:
 - `{TICKET-ID} design: events`
 - `{TICKET-ID} design: Gherkin scenarios`
 - `{TICKET-ID} design: ops checklist`
+- `{TICKET-ID} design: diagrams`
+
+### Mermaid diagrams (`diagrams.md`)
+
+Generate `diagrams.md` as the final artefact, after all other areas are settled.
+Include only the diagram types that add developer value for this specific ticket.
+
+**Diagram selection rules:**
+
+| Diagram type | Include when |
+|---|---|
+| Domain class diagram | Ticket introduces or modifies aggregates, entities, or value objects |
+| State machine diagram | Aggregate has a lifecycle with states and transitions |
+| Sequence diagram (use case) | Use case crosses two or more components (controller → use case → repository, or inter-context calls) |
+| Sequence diagram (event flow) | Ticket emits or consumes domain events |
+| Component diagram | Ticket introduces a new bounded context or a new external dependency |
+| ER diagram | Ticket has Flyway migrations that create or alter tables |
+
+Only include a diagram if it shows something that is not already obvious from the YAML
+artefacts. A single-step use case does not need a sequence diagram.
+
+**Format:**
+
+```markdown
+# Diagrams — {TICKET-ID}: {title}
+
+## Domain class diagram
+
+```mermaid
+classDiagram
+  ...
+```
+
+## State machine — {AggregateName}
+
+```mermaid
+stateDiagram-v2
+  ...
+```
+
+## Sequence — {Use case name}
+
+```mermaid
+sequenceDiagram
+  ...
+```
+
+## Event flow — {EventName}
+
+```mermaid
+sequenceDiagram
+  ...
+```
+
+## ER diagram
+
+```mermaid
+erDiagram
+  ...
+```
+```
+
+**Naming conventions inside diagrams:**
+- Use actual class/field names from `domain-model.yaml` — no invented names.
+- Sequence diagram participants: `Client`, `Controller`, `UseCase`, `Repository`,
+  `EventPublisher`, `ExternalService` — use real class names when known.
+- State diagram states match aggregate status enum values exactly.
+- Class diagrams show only the fields and methods relevant to this ticket — not the full
+  aggregate if only one method changed.
+
+After writing `diagrams.md`:
+
+    ✓ diagrams.md written — {list of diagram types generated}.
+    You can review them now or continue. Say "show it" or "continue".
 
 ---
 
@@ -243,6 +317,7 @@ When all configured artefacts are written, run cross-reference validation:
 4. Every scenario in `scenarios/` covers at least the happy path and one error path
 5. Every domain term used in `domain-model.yaml` appears in `glossary.yaml`
 6. Every Jira AC has at least one corresponding scenario
+7. `diagrams.md` exists and class/state names match `domain-model.yaml` exactly
 
 Report violations as warnings. The engineer must resolve them before the design phase closes.
 
@@ -259,7 +334,10 @@ Surface any deferred decisions:
     Design complete for {TICKET-ID}.
 
     Artefacts written:
-    {list of files}
+    {list of files — must include diagrams.md}
+
+    Diagrams generated:
+    {list of diagram types in diagrams.md, e.g. "class, state machine, sequence (UC-1), ER"}
 
     ADRs written:
     {list, or "none"}
