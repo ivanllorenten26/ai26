@@ -20,15 +20,15 @@ AI26 has 43 skills, extensive reference/coding-standards docs, and a working SDL
 
 ## P1 — High Value (vision commitments + adoption unblocks)
 
-### Track A — Compound Feedback Loop (`plan-003`)
+### Track A — Compound Feedback Loop (`plan-003`) ✅ DONE
 
 New skills: `ai26-compound`, `ai26-compound-resolve`
 
 Captures negative feedback at each SDLC checkpoint into `COMPOUND.md` (per ticket, transient inbox) and graduates resolved observations to `ai26/context/LEARNINGS.md` (permanent institutional memory).
 
-**Existing skills to modify:** `ai26-design-user-story`, `ai26-implement-user-story`, `ai26-review-user-story`, `ai26-promote-user-story`, `ai26-onboard-team`
+**Existing skills modified:** `ai26-design-ticket` (Step 1), `ai26-implement-user-story` (Step 1), `ai26-review-user-story` (Check 7), `ai26-promote-user-story` (Step 1 gate), `ai26-onboard-team` (Step 12)
 
-**New doc:** `docs/ai26-sdlc/reference/compound-feedback.md`
+**New doc:** `docs/ai26-sdlc/reference/compound-feedback.md` — pending (Wave 4 of plan-003)
 
 ### Track B — Legacy Migration System (`plan-002`)
 
@@ -120,7 +120,7 @@ Wave 1 (P0 fixes, no deps) ✅ DONE
   └─ ✅ Fix misleading cross-refs in test-create-controller-tests and test-create-integration-tests
 
 Wave 2 (P1, parallel tracks)
-  ├─ Track A: ai26-compound + ai26-compound-resolve + skill modifications
+  ├─ ✅ Track A: ai26-compound + ai26-compound-resolve + skill modifications
   ├─ Track B: ai26-assess-module → ai26-write-migration-prd → ai26-decompose-migration
   │           + skill modifications + 4 new docs + 4 doc updates
   └─ Track C: docs/guide/ — 10 user-facing guides
