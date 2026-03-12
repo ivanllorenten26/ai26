@@ -76,6 +76,17 @@ For each use case identified, ensure the conversation covers:
 - Who initiates it
 - What changes as a result
 
+**Technical carry-over detection:**
+During the conversation the user may reveal technical details that do not belong in a
+PRD — for example: technology choices, database design hints, module boundaries,
+integration patterns, or architectural constraints. Do NOT incorporate these into the
+PRD sections. Instead, collect them silently and include them in the `Technical
+carry-over` section when writing the artefact. Acceptable PRD content is:
+- Observable behaviour (what the system does for users/actors)
+- Non-functional requirements stated in business terms (e.g. "must handle 10k events/s")
+- Constraints the business imposes (compliance, SLAs, budget)
+Anything that describes *how* the system will be built belongs in carry-over.
+
 ---
 
 ## Step 4 — Propose closure
@@ -88,6 +99,7 @@ When all sections are covered and no open questions remain, propose closing:
     - Non-functional requirements: {list or "none identified"}
     - Success criteria: {defined / not defined — flag if missing}
     - Open questions: {N remaining}
+    - Technical carry-over: {N items captured / none}
 
     Shall I write prd.md?
 
@@ -161,6 +173,25 @@ Author: {from conversation or "unknown"}
 | Question | Owner | Due |
 |---|---|---|
 | {question} | {owner} | {date or "TBD"} |
+
+---
+
+## Technical carry-over
+
+> This section captures technical decisions and architectural hints mentioned during the
+> PRD conversation. They are **not** PRD content. They are preserved here so that
+> ai26-design-epic-architecture and ai26-design-user-story can use them as input.
+
+### Architecture hints
+{Technology choices, integration patterns, module boundaries, or preferred stack
+decisions mentioned by the user. Delete section if empty.}
+
+### Data / persistence hints
+{Schema ideas, storage technology preferences, migration notes. Delete if empty.}
+
+### Constraints from engineering
+{Performance bounds, security requirements, or operational limits stated in technical
+terms (e.g. "must use existing Kafka cluster", "no new databases"). Delete if empty.}
 ```
 
 Notify the engineer after writing:
