@@ -1,11 +1,11 @@
 # AI26 Consolidated Roadmap
 
-> Generated 2026-03-12 — updated 2026-03-12
+> Generated 2026-03-12 — updated 2026-03-12 (P0 ✅, P1.A ✅)
 > Merges plan-001 (gap analysis) + plan-002 (legacy migration) + plan-003 (compound feedback) + plan-004 (user-facing docs) into a single prioritized execution order.
 
 ## Context
 
-AI26 has 43 skills, extensive reference/coding-standards docs, and a working SDLC loop. A gap analysis (plan-001) identified 30+ open items across bugs, missing skills, docs, rules, CI, and versioning. Three subsequent plans (002–004) address some of these gaps plus add new capabilities. This roadmap consolidates everything into a single execution order.
+AI26 has 45 skills (43 original + 2 from P1.A), extensive reference/coding-standards docs, and a working SDLC loop. A gap analysis (plan-001) identified 30+ open items across bugs, missing skills, docs, rules, CI, and versioning. Three subsequent plans (002–004) address some of these gaps plus add new capabilities. This roadmap consolidates everything into a single execution order.
 
 ---
 
