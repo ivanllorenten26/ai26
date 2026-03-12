@@ -1,11 +1,11 @@
 # AI26 Consolidated Roadmap
 
-> Generated 2026-03-12 — updated 2026-03-12 (P0 ✅, P1.A ✅)
+> Generated 2026-03-12 — updated 2026-03-12 (P0 ✅, P1.A ✅, P1.B ✅)
 > Merges plan-001 (gap analysis) + plan-002 (legacy migration) + plan-003 (compound feedback) + plan-004 (user-facing docs) into a single prioritized execution order.
 
 ## Context
 
-AI26 has 45 skills (43 original + 2 from P1.A), extensive reference/coding-standards docs, and a working SDLC loop. A gap analysis (plan-001) identified 30+ open items across bugs, missing skills, docs, rules, CI, and versioning. Three subsequent plans (002–004) address some of these gaps plus add new capabilities. This roadmap consolidates everything into a single execution order.
+AI26 has 48 skills (43 original + 2 from P1.A + 3 from P1.B), extensive reference/coding-standards docs, and a working SDLC loop. A gap analysis (plan-001) identified 30+ open items across bugs, missing skills, docs, rules, CI, and versioning. Three subsequent plans (002–004) address some of these gaps plus add new capabilities. This roadmap consolidates everything into a single execution order.
 
 ---
 
@@ -30,17 +30,15 @@ Captures negative feedback at each SDLC checkpoint into `COMPOUND.md` (per ticke
 
 **New doc:** `docs/ai26-sdlc/reference/compound-feedback.md` — pending (Wave 4 of plan-003)
 
-### Track B — Legacy Migration System (`plan-002`)
+### Track B — Legacy Migration System (`plan-002`) ✅ DONE
 
 New skills: `ai26-assess-module`, `ai26-write-migration-prd`, `ai26-decompose-migration`
 
 Enables migrating existing Spring Boot services to AI26 standard using the Strangler Fig pattern. New directory: `ai26/migrations/{MODULE}/` with `assessment.yaml`, `prd.md`, `plan.md`.
 
-**Existing skills to modify:** `ai26-onboard-team`, `ai26-start-sdlc`, `ai26-design-user-story`, `test-create-test-configuration`
+**Existing skills modified:** `ai26-start-sdlc` (Option F + in_progress banner), `ai26-design-ticket` (migration contract context block), `ai26-onboard-team` (legacy codebase detection in Step 1)
 
-**New docs:** `docs/ai26-sdlc/vision/migration-strategy.md`, `docs/ai26-sdlc/reference/migration.md`, `docs/ai26-sdlc/reference/migration-assessment-format.md`, `docs/coding-standards/recipes/migration.md`
-
-**Docs to update:** `onboarding.md`, `skills-architecture.md`, `configuration.md`, `entry-points.md`
+**New docs pending (Wave 5 of plan-002):** `docs/ai26-sdlc/vision/migration-strategy.md`, `docs/ai26-sdlc/reference/migration.md`, `docs/ai26-sdlc/reference/migration-assessment-format.md`, `docs/coding-standards/recipes/migration.md`
 
 ### Track C — User-Facing Guides (`plan-004`)
 
@@ -121,8 +119,8 @@ Wave 1 (P0 fixes, no deps) ✅ DONE
 
 Wave 2 (P1, parallel tracks)
   ├─ ✅ Track A: ai26-compound + ai26-compound-resolve + skill modifications
-  ├─ Track B: ai26-assess-module → ai26-write-migration-prd → ai26-decompose-migration
-  │           + skill modifications + 4 new docs + 4 doc updates
+  ├─ ✅ Track B: ai26-assess-module + ai26-write-migration-prd + ai26-decompose-migration
+  │           + skill modifications (docs pending)
   └─ Track C: docs/guide/ — 10 user-facing guides
 
 Wave 3 (P2, grouped)
