@@ -1,0 +1,151 @@
+# AI26 Consolidated Roadmap
+
+> Generated 2026-03-12 — updated 2026-03-12
+> Merges plan-001 (gap analysis) + plan-002 (legacy migration) + plan-003 (compound feedback) + plan-004 (user-facing docs) into a single prioritized execution order.
+
+## Context
+
+AI26 has 43 skills, extensive reference/coding-standards docs, and a working SDLC loop. A gap analysis (plan-001) identified 30+ open items across bugs, missing skills, docs, rules, CI, and versioning. Three subsequent plans (002–004) address some of these gaps plus add new capabilities. This roadmap consolidates everything into a single execution order.
+
+---
+
+## P0 — Fix Now (broken references) ✅ DONE
+
+| # | Item | Source | Status |
+|---|------|--------|--------|
+| 1 | **Phantom skill names** — `dev-migrate-to-standard` refs `sdlc-backfill-design`, `sdlc-validate-feature`; `test-create-mother-object` refs `sdlc-implement-feature` | plan-001 §1.1, plan-002 Wave 1 | ✅ Fixed — updated to `ai26-backfill-user-story`, `ai26-validate-user-story`, `ai26-implement-user-story` |
+| 2 | **Misleading cross-refs** — `test-create-controller-tests` and `test-create-integration-tests` claim `test-create-test-configuration` generates `ControllerTest` / `@PersistenceIntegrationTest` but it doesn't | plan-001 §1.2, §1.3, plan-002 Wave 1 | ✅ Fixed — replaced with "create manually following the pattern in the project's existing class" |
+
+---
+
+## P1 — High Value (vision commitments + adoption unblocks)
+
+### Track A — Compound Feedback Loop (`plan-003`)
+
+New skills: `ai26-compound`, `ai26-compound-resolve`
+
+Captures negative feedback at each SDLC checkpoint into `COMPOUND.md` (per ticket, transient inbox) and graduates resolved observations to `ai26/context/LEARNINGS.md` (permanent institutional memory).
+
+**Existing skills to modify:** `ai26-design-user-story`, `ai26-implement-user-story`, `ai26-review-user-story`, `ai26-promote-user-story`, `ai26-onboard-team`
+
+**New doc:** `docs/ai26-sdlc/reference/compound-feedback.md`
+
+### Track B — Legacy Migration System (`plan-002`)
+
+New skills: `ai26-assess-module`, `ai26-write-migration-prd`, `ai26-decompose-migration`
+
+Enables migrating existing Spring Boot services to AI26 standard using the Strangler Fig pattern. New directory: `ai26/migrations/{MODULE}/` with `assessment.yaml`, `prd.md`, `plan.md`.
+
+**Existing skills to modify:** `ai26-onboard-team`, `ai26-start-sdlc`, `ai26-design-user-story`, `test-create-test-configuration`
+
+**New docs:** `docs/ai26-sdlc/vision/migration-strategy.md`, `docs/ai26-sdlc/reference/migration.md`, `docs/ai26-sdlc/reference/migration-assessment-format.md`, `docs/coding-standards/recipes/migration.md`
+
+**Docs to update:** `onboarding.md`, `skills-architecture.md`, `configuration.md`, `entry-points.md`
+
+### Track C — User-Facing Guides (`plan-004`)
+
+New folder: `docs/guide/` with 10 audience-appropriate docs.
+
+| File | Audience |
+|------|----------|
+| `README.md` | Everyone — index |
+| `ai26-in-5-minutes.md` | New joiners, directors |
+| `glossary.md` | Everyone |
+| `engineer-guide.md` | Product engineers |
+| `pm-guide.md` | Product managers |
+| `tech-lead-guide.md` | Tech leads, architects |
+| `director-guide.md` | Engineering directors |
+| `troubleshooting.md` | Engineers using AI26 daily |
+| `skill-catalog.md` | All engineers |
+| `conventions-cheatsheet.md` | Engineers writing code |
+
+---
+
+## P2 — Medium Value (practical gaps teams will hit)
+
+### Group A — New coding rules + paired recipes
+
+| # | Rule category | Recipe |
+|---|--------------|--------|
+| 3 | Security rules (S-\*): no secrets in source, validate at boundary, parameterised queries | `docs/coding-standards/recipes/security.md` |
+| 4 | Performance rules (P-\*): no N+1 queries, paginate list endpoints, index FKs | `docs/coding-standards/recipes/performance.md` |
+| 5 | Observability rules (O-\*): one business metric per use case, structured logging only | — |
+| 6 | — | `docs/coding-standards/recipes/caching.md` |
+| 7 | — | `docs/coding-standards/recipes/ci-cd.md` |
+| 8 | — | `docs/coding-standards/recipes/configuration.md` |
+| 9 | — | `docs/coding-standards/recipes/scheduling.md` |
+
+### Group B — Missing scaffolding skills
+
+| # | Skill | Description |
+|---|-------|-------------|
+| 10 | `dev-create-scheduler` | Spring `@Scheduled` / Quartz job with idempotency and distributed lock patterns |
+| 11 | `dev-create-cache-adapter` | Redis / Caffeine / Spring Cache outbound adapter |
+| 12 | `dev-create-grpc-controller` | gRPC inbound adapter as humble object |
+| 13 | `test-create-kafka-tests` | Kafka publisher/subscriber tests with TestContainers Kafka |
+| 14 | `test-create-sqs-tests` | SQS publisher/subscriber tests |
+
+### Group C — SDLC capability enhancements
+
+| # | Item | Description |
+|---|------|-------------|
+| 15 | Security scanning agent | Autonomous agent checking OWASP top 10, dependency vulnerabilities, secrets in code. Integrates with `ai26-review-user-story`. |
+| 16 | Fidelity 1 (quick fix) skill | Lightweight skill for typos, dependency bumps, small config changes. Skips full SDLC ceremony. |
+| 17 | Adoption metrics | % of PRs through ai26 loop, context quality scores, validation pass rate, design-first vs. backfill ratio |
+
+### Group D — CI integration
+
+| # | Item | Description |
+|---|------|-------------|
+| 18 | GitHub Actions for validation scripts | Wire `scripts/validate-coding-rules.sh` and `scripts/generate-coding-rules-doc.sh --check` into the CI workflow |
+
+---
+
+## P3 — Nice to Have (operational maturity)
+
+| # | Item | Source |
+|---|------|--------|
+| 19 | **Context audit cadence** — define a schedule for `ai26-sync-context` runs | plan-001 §3.7 |
+| 20 | **Backup strategy for context layer** — protect against accidental deletion of `ai26/context/` | plan-001 §3.8 |
+| 21 | **Plugin versioning + CHANGELOG** — bump `plugin.json` from 0.1.0, create CHANGELOG, define release process | plan-001 §5.2 |
+| 22 | **`ai26-upgrade` skill** — detect stale skill references, apply updates to `ai26/` workspace | plan-001 §5.3 |
+
+---
+
+## Execution Waves
+
+```
+Wave 1 (P0 fixes, no deps) ✅ DONE
+  └─ ✅ Fix phantom skill names (dev-migrate-to-standard, test-create-mother-object)
+  └─ ✅ Fix misleading cross-refs in test-create-controller-tests and test-create-integration-tests
+
+Wave 2 (P1, parallel tracks)
+  ├─ Track A: ai26-compound + ai26-compound-resolve + skill modifications
+  ├─ Track B: ai26-assess-module → ai26-write-migration-prd → ai26-decompose-migration
+  │           + skill modifications + 4 new docs + 4 doc updates
+  └─ Track C: docs/guide/ — 10 user-facing guides
+
+Wave 3 (P2, grouped)
+  ├─ Group A: New coding rules (S/P/O) + 6 technical recipes
+  ├─ Group B: 5 new scaffolding skills
+  ├─ Group C: Security agent + quick-fix skill + adoption metrics
+  └─ Group D: CI integration for validation scripts
+
+Wave 4 (P3 polish)
+  └─ Audit cadence + backup strategy + versioning + ai26-upgrade skill
+```
+
+---
+
+## Coverage Matrix
+
+| Area | plan-001 items | plan-002 | plan-003 | plan-004 | Uncovered |
+|------|---------------|----------|----------|----------|-----------|
+| Bugs (§1) | 4 | covers 3 | — | — | 0 (all covered) |
+| Missing skills (§2) | 10 | adds 3 migration | adds 2 feedback | — | 8 scaffolding |
+| Missing docs (§3) | 8 | adds 5 migration docs | adds 1 feedback doc | adds 10 guides | 6 technical recipes |
+| Missing rules (§4) | 3 | — | — | — | 3 |
+| Scripts/tooling (§5) | 3 | — | — | — | 3 |
+
+**21 of 28 original gap items remain uncovered by plans 002–004.**
+Plans 002–004 also add 24 net-new items not in the original analysis.
