@@ -41,6 +41,9 @@ The structural pattern used in the Valium codebase. Code is organised into layer
 **CLAUDE.md**
 The root configuration file read by Claude Code at the start of every session. Contains the stack, project overview, hard rules, and pointers to the full context layer. Along with `ai26/context/`, this is the primary input to every AI agent in every session.
 
+**COMPOUND.md**
+A transient observation inbox created per ticket at `ai26/features/{TICKET}/COMPOUND.md`. Accumulates what went wrong at any SDLC checkpoint via `/ai26-compound`. Cleared (deleted) after all observations are resolved with `/ai26-compound-resolve`. `ai26-promote-user-story` is blocked while pending observations remain.
+
 **Compound Engineering**
 The operating model behind AI26. A four-step loop (Plan → Work → Assess → Compound) where every completed feature feeds knowledge back into the context layer, making the next feature easier to build. The opposite of vibe coding. Coined and popularised by Every.to.
 
@@ -126,6 +129,13 @@ A skill that generates code (`dev-create-*`, `test-create-*`). These skills read
 
 **Intention Debt**
 Code that was correct for a specification the business no longer endorses. Harder to see than technical debt — tools cannot detect it. Managed by keeping design artefacts aligned with current business rules and by running `ai26-sync-context` to detect drift.
+
+---
+
+## L
+
+**LEARNINGS.md**
+The permanent institutional memory at `ai26/context/LEARNINGS.md`. Contains graduated observations from `/ai26-compound-resolve` — each entry records what went wrong at an SDLC checkpoint, the root cause, and what was changed to fix it. Never deleted. Read at startup by `ai26-design-ticket`, `ai26-implement-user-story`, and `ai26-review-user-story` so past mistakes are not repeated. Created automatically by `ai26-onboard-team` or on the first graduation.
 
 ---
 

@@ -53,7 +53,25 @@ Recommended flow: Flow B (Fidelity 2)
 Next step: /ai26-design-ticket SXG-1234
 ```
 
-If you already know the flow, you can skip `ai26-start-sdlc` and call the design skill directly.
+### Flag shortcuts (for experienced engineers)
+
+If you already know what you want to do, use a flag to bypass the interactive dialogue:
+
+| What you want | Command |
+|---|---|
+| Start a new epic from scratch | `/ai26-start-sdlc --prd` |
+| Continue an existing epic | `/ai26-start-sdlc --epic SXG-42` |
+| Design and build a feature ticket | `/ai26-start-sdlc --ticket SXG-1234` |
+| Fix a bug (minimal design) | `/ai26-start-sdlc --fix SXG-999` |
+| Apply a quick fix with no design | `/ai26-start-sdlc --quickfix SXG-888` |
+| Migrate a legacy module | `/ai26-start-sdlc --migrate chat-module` |
+| Backfill artefacts for existing code | `/ai26-start-sdlc --backfill SXG-777` |
+| Verify your setup | `/ai26-start-sdlc --check` |
+
+Flags skip directly to branch setup and routing — no menu, no questions until the skill itself needs them.
+
+If you omit both a Jira ID and a flag, `ai26-start-sdlc` opens a plain-language dialogue
+that guides you to the right flow without requiring knowledge of skill names or options.
 
 ---
 
@@ -262,6 +280,36 @@ This is an automated first-pass code review. It checks:
 It produces a structured report with any rule violations labelled by ID (e.g., `D-01`, `CC-03`). You address the findings before promoting.
 
 The automated review does not replace human review. It removes the mechanical checks so your human reviewer can focus on business logic and strategic implications.
+
+---
+
+## When something goes wrong
+
+If any step produces wrong output — bad domain model, missing error case, incorrect
+implementation pattern — do not manually rewrite the result and move on. Capture the
+observation so the context improves and future agents don't repeat the mistake.
+
+```
+/ai26-compound SXG-1234
+```
+
+The skill asks what went wrong, which step produced it, what type of fix is needed,
+and what should have happened. It records the observation in
+`ai26/features/SXG-1234/COMPOUND.md` without touching any artefact or code.
+
+Then apply your correction (edit the relevant context file, artefact, skill, or coding
+rule), re-run the step, and graduate resolved observations:
+
+```
+/ai26-compound-resolve SXG-1234
+```
+
+This archives each resolved observation to `ai26/context/LEARNINGS.md` — the permanent
+institutional memory read by future agents. It optionally proposes a `CLAUDE.md` rule
+when the fix should apply to every session, not just this ticket.
+
+**Promotion is blocked** if `COMPOUND.md` has pending observations. Resolve them before
+running `ai26-promote-user-story`.
 
 ---
 

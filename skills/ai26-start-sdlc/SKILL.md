@@ -1,7 +1,7 @@
 ---
 name: ai26-start-sdlc
 description: SDLC3 single entry point. Detects context from a Jira ID or conversation, sets up the branch, and routes to the correct flow. Use this to start any SDLC3 flow — new epic, existing epic, standalone feature, bug fix, or quick fix.
-argument-hint: "[JIRA-ID] — epic or ticket ID, or omit to be prompted"
+argument-hint: "[JIRA-ID] or [--prd | --epic ID | --ticket ID | --fix ID | --quickfix | --migrate MODULE | --backfill ID | --check]"
 ---
 
 # ai26-start-sdlc
@@ -28,6 +28,25 @@ Defaults (not in config — hardcoded):
 
 ---
 
+## Flags — expert shortcuts
+
+If any flag was provided, skip Step 2 (guided dialogue) entirely and go straight to Step 3 (branch setup) → Step 4 (route).
+
+| Flag | Routes to | Notes |
+|---|---|---|
+| `--prd` | `ai26-write-prd` | Start a new epic from scratch or an existing document |
+| `--epic {EPIC-ID}` | `ai26-design-epic` (resume) | Resume or start an epic design |
+| `--ticket {TICKET-ID}` | `ai26-design-ticket` (auto-fidelity) | Fidelity inferred from ticket type (see Step 2 heuristic) |
+| `--fix {TICKET-ID}` | `ai26-design-ticket --fidelity 1` | Bug fix / small change, minimal artefact set |
+| `--quickfix [TICKET-ID\|desc]` | `ai26-implement-fix` | No design, direct implementation |
+| `--migrate {MODULE}` | `ai26-assess-module` | Start or resume a legacy module migration |
+| `--backfill {TICKET-ID}` | `ai26-backfill-user-story` | Retroactively generate artefacts for existing code |
+| `--check` | Setup verification (Step 5) | Verify config, context files, Jira MCP, git remote |
+
+`--ticket` uses the same fidelity inference as the Jira ID auto-detect path (Bug/fix → fidelity 1, feature → fidelity 2). Pass `--fidelity 1` or `--fidelity 2` to override.
+
+---
+
 ## Step 2 — Detect entry point
 
 If a Jira ID was provided as argument, read the issue from Jira via MCP.
@@ -38,7 +57,7 @@ Determine the issue type from Jira: **epic** or **ticket**.
 
 **Epic ID provided:**
 - Check `ai26/epics/{EPIC}/` for existing artefacts
-- Route as Option A or B (see below)
+- Route as Option 2 or 1 (see below)
 
 **Ticket ID provided:**
 - Read ticket: description, ACs, epic link, status, labels
@@ -49,26 +68,35 @@ Determine the issue type from Jira: **epic** or **ticket**.
 |---|---|
 | Epic has `architecture.md` + ticket has `ai26/features/{TICKET}/` artefacts | Skip to `/ai26-implement-user-story` |
 | Epic has `architecture.md`, ticket has no artefacts yet | Route to `/ai26-implement-user-story` (artefacts already in `ai26/features/{TICKET}/` from epic design) |
-| No epic context, ticket type is Bug or labels include `fix` | Route to Option D (fidelity 1) |
-| No epic context, ticket is a feature | Route to Option C (fidelity 2) |
-| Ticket is trivial (title contains "typo", "bump", "config") | Route to Option E |
+| No epic context, ticket type is Bug or labels include `fix` | Route to Option 4 (fidelity 1) |
+| No epic context, ticket is a feature | Route to Option 3 (fidelity 2) |
+| Ticket is trivial (title contains "typo", "bump", "config") | Route to Option 5 |
 
 Show the auto-detected route and ask for confirmation before proceeding.
 
-### If no Jira ID was provided — show routing menu
+### If no Jira ID and no flag — guided dialogue
 
-    What do you want to work on?
+    What are you working on?
 
-    A. New epic                    → ai26-write-prd → ai26-design-epic
-    B. Continue existing epic      → ai26-design-epic (detects progress, resumes)
-    C. Standalone feature ticket   → ai26-design-ticket --fidelity 2
-    D. Bug fix / small change      → ai26-design-ticket --fidelity 1
-    E. Quick fix (no design)       → ai26-implement-fix
-    F. Migrate legacy module       → ai26-assess-module → ai26-write-migration-prd → ai26-decompose-migration
+    1. A new business initiative (PRD, epic, ticket breakdown)
+    2. An existing epic (continue design or decompose into tickets)
+    3. A ticket to design and build
+    4. A bug fix or small change
+    5. A quick fix — no design needed, just implement
+    6. Migrating a legacy module to AI26 standard
 
-    Choose A–F, or provide a Jira ID.
+    Choose 1–6, or paste a Jira ID.
 
-Wait for the engineer's choice before continuing.
+Wait for the engineer's choice before continuing. Then ask the appropriate follow-up:
+
+| Choice | Follow-up | Routes to |
+|---|---|---|
+| **1** | "Do you already have a document (PRD, brief, email) or starting from scratch?" | `ai26-write-prd` |
+| **2** | "What's the epic ID?" → read Jira, detect phase | `ai26-design-epic` (resumes from correct phase) |
+| **3** | "What's the ticket ID?" → read Jira, auto-detect fidelity | `ai26-design-ticket` |
+| **4** | "What's the ticket ID?" | `ai26-design-ticket --fidelity 1` |
+| **5** | "What's the ticket ID or describe what to fix?" | `ai26-implement-fix` |
+| **6** | "Which module? (list from `modules` in config)" | `ai26-assess-module {MODULE}` |
 
 ---
 
@@ -118,11 +146,11 @@ git push -u origin {branch-name}
 
 ## Step 4 — Route to correct skill
 
-### Option A — New epic
+### Option 1 — New business initiative (PRD)
 
 Invoke `/ai26-write-prd` with `mode: new`.
 
-### Option B — Continue existing epic
+### Option 2 — Continue existing epic
 
 Read `ai26/epics/{EPIC}/` to detect what exists:
 
@@ -143,19 +171,19 @@ Show what was found before routing:
 
     Routing to ai26-design-epic (will start from Phase 2).
 
-### Option C — Standalone feature ticket (fidelity 2)
+### Option 3 — Ticket to design and build (fidelity 2)
 
 Invoke `/ai26-design-ticket {TICKET-ID} --fidelity 2`.
 
-### Option D — Bug fix / small change (fidelity 1)
+### Option 4 — Bug fix / small change (fidelity 1)
 
 Invoke `/ai26-design-ticket {TICKET-ID} --fidelity 1`.
 
-### Option E — Quick fix (no design)
+### Option 5 — Quick fix (no design)
 
 Invoke `/ai26-implement-fix {TICKET-ID}`.
 
-### Option F — Migrate legacy module
+### Option 6 — Migrate legacy module
 
 Invoke `/ai26-assess-module {MODULE}`.
 
@@ -169,10 +197,10 @@ the next `pending` ticket and offer to resume:
     B. Start from the beginning (/ai26-assess-module {MODULE})
 
 Also check: if any module in `ai26/config.yaml` has `migration_status: in_progress`,
-surface it proactively in the routing menu even if the engineer did not choose F:
+surface it proactively before the guided dialogue even if the engineer did not choose 6:
 
     ⚠ Module {MODULE} has a migration in progress ({N}/{M} tickets complete).
-    Run /ai26-start-sdlc to continue migration, or choose a different flow.
+    Run /ai26-start-sdlc --migrate {MODULE} to continue, or choose a different flow.
 
 ---
 

@@ -28,7 +28,7 @@ Captures negative feedback at each SDLC checkpoint into `COMPOUND.md` (per ticke
 
 **Existing skills modified:** `ai26-design-ticket` (Step 1), `ai26-implement-user-story` (Step 1), `ai26-review-user-story` (Check 7), `ai26-promote-user-story` (Step 1 gate), `ai26-onboard-team` (Step 12)
 
-**New doc:** `docs/ai26-sdlc/reference/compound-feedback.md` — pending (Wave 4 of plan-003)
+**New doc:** `docs/ai26-sdlc/reference/compound-feedback.md` ✅
 
 ### Track B — Legacy Migration System (`plan-002`) ✅ DONE
 
@@ -38,7 +38,7 @@ Enables migrating existing Spring Boot services to AI26 standard using the Stran
 
 **Existing skills modified:** `ai26-start-sdlc` (Option F + in_progress banner), `ai26-design-ticket` (migration contract context block), `ai26-onboard-team` (legacy codebase detection in Step 1)
 
-**New docs pending (Wave 5 of plan-002):** `docs/ai26-sdlc/vision/migration-strategy.md`, `docs/ai26-sdlc/reference/migration.md`, `docs/ai26-sdlc/reference/migration-assessment-format.md`, `docs/coding-standards/recipes/migration.md`
+**New docs:** `docs/ai26-sdlc/vision/migration-strategy.md` ✅, `docs/ai26-sdlc/reference/migration.md` ✅, `docs/ai26-sdlc/reference/migration-assessment-format.md` ✅, `docs/coding-standards/recipes/migration.md` ✅
 
 ### Track C — User-Facing Guides (`plan-004`) ✅ DONE
 
@@ -118,9 +118,9 @@ Wave 1 (P0 fixes, no deps) ✅ DONE
   └─ ✅ Fix misleading cross-refs in test-create-controller-tests and test-create-integration-tests
 
 Wave 2 (P1, parallel tracks)
-  ├─ ✅ Track A: ai26-compound + ai26-compound-resolve + skill modifications
+  ├─ ✅ Track A: ai26-compound + ai26-compound-resolve + skill modifications + compound-feedback.md
   ├─ ✅ Track B: ai26-assess-module + ai26-write-migration-prd + ai26-decompose-migration
-  │           + skill modifications (docs pending)
+  │           + skill modifications + migration docs (Wave 5)
   └─ ✅ Track C: docs/guide/ — 10 user-facing guides
 
 Wave 3 (P2, grouped)

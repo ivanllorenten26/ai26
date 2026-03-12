@@ -193,6 +193,40 @@ Re-entrant: detects partial implementation and continues from where it stopped.
 
 ---
 
+## Compound Feedback
+
+These skills capture what went wrong during any SDLC step and graduate resolved observations
+to permanent institutional memory. Use them whenever AI output is wrong — instead of
+manually fixing the result, capture the observation so the context improves.
+
+---
+
+### `ai26-compound`
+
+**Description:** Observe-only feedback capture. When an AI agent produces wrong output at any SDLC checkpoint (design, implementation, review, PR feedback, or a production incident), this skill records the observation in `ai26/features/{TICKET}/COMPOUND.md`. It asks what went wrong, which step produced it, what type of fix is needed, and what should have happened instead. Does not modify any artefact, context file, or code.
+
+**When to use:** Immediately whenever the engineer spots something wrong with AI26 output. Invoke before applying corrections so the observation is not lost.
+
+**Usage:**
+```
+/ai26-compound SXG-1234
+```
+
+---
+
+### `ai26-compound-resolve`
+
+**Description:** Graduation skill. Processes resolved observations from a ticket's `COMPOUND.md`, archives each to the permanent `ai26/context/LEARNINGS.md` record, and optionally proposes a `CLAUDE.md` rule for systemic fixes. Future agents read `LEARNINGS.md` to avoid repeating the same mistakes.
+
+**When to use:** After applying corrections and re-running the affected SDLC step successfully. Run before `ai26-promote-user-story` — promotion is blocked if pending observations remain.
+
+**Usage:**
+```
+/ai26-compound-resolve SXG-1234
+```
+
+---
+
 ## Migration
 
 These skills handle the migration of existing modules that were built without AI26 conventions.
@@ -323,6 +357,177 @@ These skills generate code scaffolding for specific architectural elements. They
 
 ---
 
+### `dev-create-domain-entity`
+
+**Description:** Scaffolds a child entity inside an existing aggregate boundary. Not for new aggregate roots — use `dev-create-aggregate` for those.
+
+**When to use:** When adding a subordinate entity to an existing aggregate root. Called automatically by `ai26-implement-user-story` when `domain-model.yaml` has a `status: new` child entity entry.
+
+**Usage:**
+```
+/dev-create-domain-entity Message inside Conversation
+```
+
+---
+
+### `dev-create-domain-service`
+
+**Description:** Scaffolds a stateless domain service for business logic that spans multiple aggregates and does not naturally belong to a single entity or value object.
+
+**When to use:** When cross-aggregate logic needs a home in the domain layer.
+
+**Usage:**
+```
+/dev-create-domain-service ConversationAssignmentPolicy
+```
+
+---
+
+### `dev-create-domain-exception`
+
+**Description:** Creates the correct error type for a business rule violation — thrown domain exception, `Either` sealed error, or application exception — following ADR 2026-01-27.
+
+**When to use:** When a domain entity or use case needs to signal a business rule violation.
+
+**Usage:**
+```
+/dev-create-domain-exception ConversationAlreadyClosed
+```
+
+---
+
+### `dev-create-jpa-repository`
+
+**Description:** Scaffolds a JPA repository implementation in `infrastructure/outbound` for standard CRUD operations. Use when simple database operations are sufficient and JOOQ is not needed.
+
+**When to use:** When a new repository adapter needs a Spring Data JPA implementation. Called automatically by `ai26-implement-user-story`.
+
+**Usage:**
+```
+/dev-create-jpa-repository Conversation
+```
+
+---
+
+### `dev-create-flyway-migration`
+
+**Description:** Scaffolds a Flyway SQL migration file with TODO markers for human review. Supports `CREATE TABLE` (from domain model) and `ALTER TABLE` (add column, index, constraint).
+
+**When to use:** When a feature needs database schema changes. Called automatically by `ai26-implement-user-story` when `domain-model.yaml` has schema changes.
+
+**Usage:**
+```
+/dev-create-flyway-migration create-table Conversation
+/dev-create-flyway-migration alter-table Conversation --add agent_id:UUID
+```
+
+---
+
+### `dev-create-kafka-publisher`
+
+**Description:** Scaffolds an outbound Kafka publisher for a domain event using `KafkaTemplate<String, ByteArray>` and Jackson. Follows the sopranium pattern — one topic per aggregate, sealed class variants per transition.
+
+**When to use:** When the module needs to produce messages to a Kafka topic. Called automatically by `ai26-implement-user-story` when `events.yaml` has `direction: outbound` Kafka entries.
+
+**Usage:**
+```
+/dev-create-kafka-publisher ConversationClosed
+```
+
+---
+
+### `dev-create-kafka-subscriber`
+
+**Description:** Scaffolds an inbound Kafka listener adapter as a humble object that delegates to a use case, with `ExponentialBackOff` retry and manual acknowledgment.
+
+**When to use:** When the module needs to consume messages from a Kafka topic.
+
+**Usage:**
+```
+/dev-create-kafka-subscriber AgentAssigned
+```
+
+---
+
+### `dev-create-sqs-publisher`
+
+**Description:** Scaffolds an outbound SQS publisher adapter with domain port, `SqsTemplate`, `@Retry`, and error mapping.
+
+**When to use:** When the module needs to send messages to an SQS queue.
+
+**Usage:**
+```
+/dev-create-sqs-publisher ConversationAnalysis
+```
+
+---
+
+### `dev-create-sqs-subscriber`
+
+**Description:** Scaffolds an inbound SQS listener adapter as a humble object that delegates to a use case.
+
+**When to use:** When the module needs to consume messages from an SQS queue.
+
+**Usage:**
+```
+/dev-create-sqs-subscriber ConversationAnalysis
+```
+
+---
+
+### `dev-create-sqs-redrive`
+
+**Description:** Scaffolds a DLQ reprocessor that reads failed messages from a dead-letter queue and reprocesses them via the use case.
+
+**When to use:** When an SQS operation needs manual or scheduled DLQ replay.
+
+**Usage:**
+```
+/dev-create-sqs-redrive ConversationAnalysis
+```
+
+---
+
+### `dev-create-api-client`
+
+**Description:** Scaffolds an outbound HTTP client adapter using Retrofit with configuration, retry, and error mapping.
+
+**When to use:** When the module needs to call an external HTTP service.
+
+**Usage:**
+```
+/dev-create-api-client ConversationAnalysisClient
+```
+
+---
+
+### `dev-generate-jooq-schema`
+
+**Description:** Regenerates JOOQ type-safe classes from Flyway migrations using the project's code-generation pipeline.
+
+**When to use:** After adding or modifying a Flyway migration, before implementing a JOOQ repository.
+
+**Usage:**
+```
+/dev-generate-jooq-schema Conversation
+```
+
+---
+
+### `dev-generate-http-files`
+
+**Description:** Generates IntelliJ `.http` files from existing REST controllers for manual API testing against local or staging environments.
+
+**When to use:** After implementing a controller, to get executable HTTP request files.
+
+**Usage:**
+```
+/dev-generate-http-files ConversationController
+/dev-generate-http-files --all
+```
+
+---
+
 ### `dev-migrate-to-standard`
 
 **Description:** Migrates a single source file from legacy patterns to current AI26 conventions. Used during migration tickets to bring individual files into compliance.
@@ -381,9 +586,55 @@ These skills generate test scaffolding. Called automatically by `ai26-implement-
 
 ---
 
-### `test-create-use-case-tests` *(also listed above)*
+### `test-create-integration-tests`
 
-See use case tests entry above.
+**Description:** Creates integration tests for infrastructure adapters (JPA/JOOQ repositories, external services) using TestContainers. Verifies that outbound adapters correctly persist and retrieve domain entities against a real database.
+
+**When to use:** When a new repository or outbound adapter is implemented. Called automatically by `ai26-implement-user-story`. Mandatory per rule T-01 (TestContainers only — never H2).
+
+**Usage:**
+```
+/test-create-integration-tests ConversationRepositoryImpl
+```
+
+---
+
+### `test-create-contract-tests`
+
+**Description:** Generates WireMock-based contract tests for outbound HTTP client adapters. Verifies that the adapter correctly handles success, error, and timeout responses from an external service.
+
+**When to use:** When a new HTTP client adapter is implemented with `dev-create-api-client`.
+
+**Usage:**
+```
+/test-create-contract-tests ConversationAnalysisClient
+```
+
+---
+
+### `test-create-architecture-tests`
+
+**Description:** Creates ArchUnit tests that enforce Clean Architecture layer rules for a module: domain has no framework imports (CC-01), infrastructure is in `inbound/` or `outbound/` (CC-02), no circular dependencies.
+
+**When to use:** Once per module, typically during onboarding or migration. Automates architectural invariant checks in CI.
+
+**Usage:**
+```
+/test-create-architecture-tests service
+```
+
+---
+
+### `test-create-test-configuration`
+
+**Description:** Creates shared test infrastructure: TestContainers setup, Spring test configuration, and test properties. The foundation that other test skills depend on.
+
+**When to use:** Once when setting up a new service or module that needs integration test support. Run before other test skills.
+
+**Usage:**
+```
+/test-create-test-configuration service
+```
 
 ---
 

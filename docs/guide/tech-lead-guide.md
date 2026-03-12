@@ -163,6 +163,35 @@ Signs the loop is breaking:
 - Context drift is accumulating — `ai26-sync-context` warnings are being ignored
 - Engineers are manually rewriting AI-generated code rather than updating context
 
+### Capturing wrong AI output — compound feedback
+
+When an agent produces wrong output, the correct response is to capture the observation
+and fix the underlying context — not to rewrite the result and move on.
+
+```
+/ai26-compound {TICKET-ID}
+```
+
+This records what went wrong and what type of fix is needed (`context`, `artefact`,
+`skill`, or `rule`) into `ai26/features/{TICKET}/COMPOUND.md`. After applying the fix
+and re-running the affected step:
+
+```
+/ai26-compound-resolve {TICKET-ID}
+```
+
+This graduates the resolved observation to `ai26/context/LEARNINGS.md` — the permanent
+institutional memory. Future agents read it at startup to avoid repeating the same mistake.
+`ai26-promote-user-story` is blocked if pending observations remain in `COMPOUND.md`.
+
+**Signs the feedback loop is working:**
+
+- `ai26/context/LEARNINGS.md` is growing over time
+- Engineers run `/ai26-compound` during review rather than silently fixing code
+- Promotion is clean — no `COMPOUND.md` blocking warnings
+
+See `docs/ai26-sdlc/reference/compound-feedback.md` for the full workflow.
+
 ### Running `ai26-sync-context`
 
 When you suspect context has drifted from code:

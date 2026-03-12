@@ -26,29 +26,34 @@ ADRs written during design, DEBT.md entries for fragile areas, and coding rules 
 
 ---
 
-## 2. Three Flows: When to Use What
+## 2. Four Flows: When to Use What
 
 ```
 Is this a full feature / multi-ticket initiative?
   YES → Flow A: Epic
         Example: "Add transcript archival and conversation analysis"
-        Start:   /ai26-start-sdlc (option A or B)
+        Start:   /ai26-start-sdlc --prd   or   /ai26-start-sdlc --epic SXG-42
 
 Is this a standalone feature or ticket with domain impact?
   YES → Flow B: Standalone Ticket (fidelity 2)
         Example: "Add a new endpoint to fetch analysis results"
-        Start:   /ai26-start-sdlc (option C)
+        Start:   /ai26-start-sdlc --ticket SXG-1234
 
 Is this a bug fix with domain impact (new error case, state change)?
   YES → Flow B: Standalone Ticket (fidelity 1)
         Example: "Handle race condition when conversation closes during escalation"
-        Start:   /ai26-start-sdlc (option D)
+        Start:   /ai26-start-sdlc --fix SXG-999
 
 Is this a typo, dependency bump, config change, obvious bug?
   YES → Flow C: Quick Fix
         Example: "Fix NPE in message serializer", "Bump Spring Boot to 3.4.1"
-        Start:   /ai26-start-sdlc (option E)
+        Start:   /ai26-start-sdlc --quickfix SXG-888
         Note:    If the agent discovers complexity, it auto-escalates to Flow B
+
+Is this a legacy module that needs to be migrated to AI26 standard?
+  YES → Flow D: Migration
+        Example: "Migrate the chat module to Clean Architecture"
+        Start:   /ai26-start-sdlc --migrate chat-module
 ```
 
 When in doubt, run `/ai26-start-sdlc` — it will ask or auto-detect.
@@ -177,7 +182,51 @@ implement-fix
 
 ---
 
-## 6. The Compound Step
+## 6. Flow D: Migration
+
+Use when an existing module was built outside AI26 standards and needs to be brought into
+Clean Architecture + DDD alignment. This is a six-phase flow that ends with each extracted
+ticket going through Flow B.
+
+```
+/ai26-start-sdlc --migrate {MODULE}
+```
+
+### Phase overview
+
+| Phase | Skill | Output |
+|---|---|---|
+| 1. Assess | `ai26-assess-module` | `ai26/migrations/{MODULE}/assessment.md` — violations, risk areas, migration scope |
+| 2. Migration PRD | `ai26-write-migration-prd` | `ai26/migrations/{MODULE}/prd.md` — business justification, success criteria |
+| 3. Decompose | `ai26-decompose-migration` | `ai26/migrations/{MODULE}/plan.md` — ordered ticket list, each a vertical slice of the migration |
+| 4–6. Per-ticket | Flow B (fidelity 1 or 2 per ticket) | Implementation of each migration ticket |
+
+### Resume behaviour
+
+If `ai26/migrations/{MODULE}/plan.md` already exists, `ai26-start-sdlc` detects it and
+offers to resume:
+
+```
+Found migration plan for chat-module. Progress: 3/8 tickets complete.
+Next ticket: SXG-1102 — migrate ConversationRepository
+
+A. Continue from next migration ticket (SXG-1102)
+B. Start from the beginning (/ai26-assess-module chat-module)
+```
+
+### In-progress proactive surfacing
+
+If any module in `ai26/config.yaml` has `migration_status: in_progress`, `ai26-start-sdlc`
+surfaces it at the top of the guided dialogue even when the engineer did not choose migration:
+
+```
+⚠ Module chat-module has a migration in progress (3/8 tickets complete).
+Run /ai26-start-sdlc --migrate chat-module to continue, or choose a different flow.
+```
+
+---
+
+## 7. The Compound Step (applies to all flows)
 
 Every completed ticket feeds knowledge back via `ai26-promote-user-story`:
 
@@ -192,9 +241,37 @@ Every completed ticket feeds knowledge back via `ai26-promote-user-story`:
 
 The compound effect: a codebase with 50 designed tickets produces a context set that makes ticket 51 dramatically easier to design and implement correctly. Skip the Compound step and you lose the compounding.
 
+### Compound feedback loop
+
+When AI output is wrong, the compound feedback skills capture the lesson so the context improves:
+
+```
+Wrong output at any step
+      ↓
+/ai26-compound {TICKET-ID}          ← observe and record → COMPOUND.md
+      ↓
+Apply correction (context file / artefact / skill / coding rule)
+      ↓
+Re-run the affected step
+      ↓
+/ai26-compound-resolve {TICKET-ID}  ← graduate → ai26/context/LEARNINGS.md
+      ↓
+/ai26-promote-user-story {TICKET-ID}
+```
+
+| Skill | Role |
+|---|---|
+| `ai26-compound` | Captures what went wrong at any SDLC checkpoint into `COMPOUND.md` |
+| `ai26-compound-resolve` | Graduates resolved observations to `LEARNINGS.md`, optionally proposes CLAUDE.md rules |
+
+`ai26-promote-user-story` is blocked if `COMPOUND.md` has pending observations.
+Future agents read `LEARNINGS.md` at startup to avoid repeating past mistakes.
+
+See `docs/ai26-sdlc/reference/compound-feedback.md` for the full reference.
+
 ---
 
-## 7. Skill Map
+## 8. Skill Map
 
 | Skill | Flow | Status |
 |---|---|---|
@@ -202,10 +279,15 @@ The compound effect: a codebase with 50 designed tickets produces a context set 
 | `ai26-design-epic` | A — Architecture + Design + Decompose + Jira | active |
 | `ai26-design-ticket` | B — Standalone ticket design (fidelity 1 or 2) | active |
 | `ai26-implement-fix` | C — Direct implementation, no design | active |
-| `ai26-implement-user-story` | A/B — Implementation from artefacts | active |
+| `ai26-assess-module` | D — Migration: assessment phase | active |
+| `ai26-write-migration-prd` | D — Migration: PRD phase | active |
+| `ai26-decompose-migration` | D — Migration: decompose into tickets | active |
+| `ai26-implement-user-story` | A/B/D — Implementation from artefacts | active |
 | `ai26-validate-user-story` | A/B — Design-to-code validation | active |
 | `ai26-review-user-story` | A/B — Automated code review | active |
 | `ai26-promote-user-story` | A/B — Compound step | active |
+| `ai26-compound` | utility — Capture wrong AI output into COMPOUND.md | active |
+| `ai26-compound-resolve` | utility — Graduate resolved observations to LEARNINGS.md | active |
 | `ai26-refine-user-story` | utility — Lightweight artefact editor | active |
 | `ai26-backfill-user-story` | utility — Retroactive artefact generation | active |
 | `ai26-sync-context` | utility — Detect and fix context drift | active |

@@ -1,6 +1,6 @@
 # Entry Points
 
-> How to start working with AI26 regardless of where you are in the process.
+> How to start any AI26 SDLC flow, regardless of where you are in the process.
 
 ---
 
@@ -8,195 +8,245 @@
 
 All flows start with one skill:
 
-    /ai26-start-sdlc [optional: JIRA-ID]
+    /ai26-start-sdlc [JIRA-ID | flag]
 
-The LLM asks where you are and routes you to the right place. You never need to know
-which underlying skill to invoke — `ai26-start-sdlc` figures that out.
-
-    LLM: What do you want to work on?
-
-         A. New epic       — I have a business initiative, help me decompose it into tickets
-         B. Existing epic  — I have an epic in Jira, continue from there
-         C. New ticket     — I have an epic, help me define and design a new ticket
-         D. Existing ticket — I have a ticket, help me design and implement it
-
-If you provide a Jira ID upfront, the LLM reads it and skips the question:
-
-    /ai26-start-sdlc EPIC-42     → detects it is an epic, asks A or B
-    /ai26-start-sdlc TICKET-123  → detects it is a ticket, goes to D
+You never need to know which underlying skill to invoke — `ai26-start-sdlc` figures that out.
 
 ---
 
-## Option A — New epic
+## Three ways to invoke
 
-You have a business initiative. No Jira epic exists yet.
+### 1. Paste a Jira ID (auto-detect)
 
-    /ai26-start-sdlc
-    > A
+```
+/ai26-start-sdlc SXG-42      ← epic ID  → detects phase, routes to ai26-design-epic
+/ai26-start-sdlc SXG-1234    ← ticket ID → auto-detects fidelity, routes accordingly
+```
 
-    LLM: Do you have an existing document (PRD, brief, email) or do you want
-         to start from a description?
+The skill reads the issue from Jira and picks the correct flow automatically. It shows
+the detected route and asks for confirmation before proceeding.
 
-Flows into Phase 1a (PRD) → Phase 1b (Epic Architecture) → Phase 1c (Decomposition).
-An epic is created in Jira at the start of Phase 1c.
+**Auto-detect heuristic for tickets:**
 
-See `level1-flow.md` for the full detail of each phase.
+| Ticket signals | Route |
+|---|---|
+| Epic has `architecture.md` + ticket has artefacts in `ai26/features/{TICKET}/` | Skip design → `/ai26-implement-user-story` |
+| Epic has `architecture.md`, ticket has no artefacts yet | `/ai26-implement-user-story` (artefacts from epic design) |
+| No epic context, ticket type is Bug or label includes `fix` | `/ai26-design-ticket --fidelity 1` |
+| No epic context, feature ticket | `/ai26-design-ticket --fidelity 2` |
+| Ticket title contains "typo", "bump", or "config" | `/ai26-implement-fix` |
 
 ---
 
-## Option B — Existing epic
+### 2. Use a flag (expert shortcut)
+
+Flags bypass the interactive dialogue entirely and go straight to branch setup → route.
+
+| Flag | Routes to | Notes |
+|---|---|---|
+| `--prd` | `ai26-write-prd` | New epic from scratch or an existing document |
+| `--epic {EPIC-ID}` | `ai26-design-epic` | Resume or start an epic design |
+| `--ticket {TICKET-ID}` | `ai26-design-ticket` (auto-fidelity) | Fidelity inferred from ticket type |
+| `--fix {TICKET-ID}` | `ai26-design-ticket --fidelity 1` | Bug fix / small change |
+| `--quickfix [TICKET-ID\|desc]` | `ai26-implement-fix` | Direct implementation, no design |
+| `--migrate {MODULE}` | `ai26-assess-module` | Start or resume a legacy module migration |
+| `--backfill {TICKET-ID}` | `ai26-backfill-user-story` | Retroactively generate artefacts for existing code |
+| `--check` | Setup verification | Verify config, context files, Jira MCP, git remote |
+
+**Examples:**
+
+```
+/ai26-start-sdlc --prd
+/ai26-start-sdlc --epic SXG-42
+/ai26-start-sdlc --ticket SXG-1234
+/ai26-start-sdlc --ticket SXG-1234 --fidelity 1   ← override auto-detect
+/ai26-start-sdlc --fix SXG-999
+/ai26-start-sdlc --quickfix SXG-888
+/ai26-start-sdlc --quickfix "bump Spring Boot to 3.4.1"
+/ai26-start-sdlc --migrate chat-module
+/ai26-start-sdlc --backfill SXG-777
+/ai26-start-sdlc --check
+```
+
+---
+
+### 3. No argument — guided dialogue (newcomers)
+
+With no Jira ID and no flag, the skill opens a plain-language dialogue:
+
+```
+What are you working on?
+
+1. A new business initiative (PRD, epic, ticket breakdown)
+2. An existing epic (continue design or decompose into tickets)
+3. A ticket to design and build
+4. A bug fix or small change
+5. A quick fix — no design needed, just implement
+6. Migrating a legacy module to AI26 standard
+
+Choose 1–6, or paste a Jira ID.
+```
+
+Each option leads to a follow-up question before routing:
+
+| Choice | Follow-up | Routes to |
+|---|---|---|
+| **1** | "Do you have a document (PRD, brief, email) or starting from scratch?" | `ai26-write-prd` |
+| **2** | "What's the epic ID?" | `ai26-design-epic` (resumes from correct phase) |
+| **3** | "What's the ticket ID?" | `ai26-design-ticket` (fidelity auto-detected) |
+| **4** | "What's the ticket ID?" | `ai26-design-ticket --fidelity 1` |
+| **5** | "What's the ticket ID or describe what to fix?" | `ai26-implement-fix` |
+| **6** | "Which module?" (lists modules from config) | `ai26-assess-module {MODULE}` |
+
+---
+
+## The 6 flows
+
+### Flow 1 — New epic (PRD → design → decompose)
+
+You have a business initiative. No epic in Jira yet.
+
+```
+/ai26-start-sdlc --prd
+```
+
+Produces `ai26/epics/{EPIC}/prd.md`, then flows into `/ai26-design-epic`.
+
+See `flows.md` — Flow A for the full phase breakdown.
+
+---
+
+### Flow 2 — Continue existing epic
 
 You have an epic in Jira. Work may have already started.
 
-    /ai26-start-sdlc EPIC-42
-
-The LLM reads the epic from Jira (via MCP) and evaluates what exists:
-
 ```
-LLM reads:
-  - Epic description and ACs from Jira
-  - Child tickets already created
-  - ai26/epics/EPIC-42/ if it exists (previous AI26 work)
-  - ai26/context/ and docs/architecture/
-
-LLM evaluates:
-  ✓ PRD exists (ai26/epics/EPIC-42/prd.md)        → skip Phase 1a
-  ✗ Architecture context missing               → run Phase 1b
-  ✓ Tickets already in Jira                    → show existing decomposition, offer to refine
+/ai26-start-sdlc --epic SXG-42
+# or
+/ai26-start-sdlc SXG-42
 ```
 
-The LLM shows what it found and proposes where to continue:
+The skill reads `ai26/epics/SXG-42/` and detects where to resume:
 
-    LLM: I found a PRD for EPIC-42 and 3 tickets already in Jira.
-         No architecture context exists yet.
+```
+Found for SXG-42:
+✓ ai26/epics/SXG-42/prd.md (2026-03-07)
+✗ ai26/epics/SXG-42/architecture.md — missing
 
-         I suggest:
-         1. Run epic architecture analysis (Phase 1b)
-         2. Review existing tickets against the architecture context
-         3. Create missing tickets if needed
+Routing to ai26-design-epic (will start from Phase 2).
+```
 
-         Does that work, or do you want to go straight to a specific ticket?
+See `flows.md` — Flow A for the phase table.
 
 ---
 
-## Option C — New ticket
+### Flow 3 — Ticket to design and build (fidelity 2)
 
-You have an epic, and you want to create and design a new ticket for it.
+Full design conversation producing the complete artefact set, followed by implementation.
 
-    /ai26-start-sdlc
-    > C
-    > Epic: EPIC-42
+```
+/ai26-start-sdlc --ticket SXG-1234
+# or
+/ai26-start-sdlc SXG-1234      ← if auto-detect picks fidelity 2
+```
 
-The LLM reads the epic context (PRD + architecture if they exist) and opens a
-conversation to define the ticket scope. Output: a new ticket created in Jira
-with description and ACs, then flows directly into the design phase (Phase 2a).
+Produces `ai26/features/SXG-1234/` with all artefacts (domain model, use case flows,
+error catalog, API contracts, events, scenarios, ops checklist).
 
-If the epic has no PRD or architecture context, the LLM proceeds with what it
-has — reading the epic from Jira and the existing `ai26/context/` — and notes what
-is missing:
-
-    LLM: No PRD or architecture context found for EPIC-42.
-         I'll work from the epic description in Jira and the repository context.
-         Some information that would normally come from the epic phases may need
-         to be clarified during the design conversation.
+See `flows.md` — Flow B (fidelity 2).
 
 ---
 
-## Option D — Existing ticket
+### Flow 4 — Bug fix / small change (fidelity 1)
 
-You have a ticket in Jira. This is the most common entry point for engineers.
-
-    /ai26-start-sdlc TICKET-123
-
-### Bootstrap evaluation
-
-Before opening the design conversation, the LLM evaluates what it has:
+Minimal design artefacts: `scenarios/` + `error-catalog.yaml` + `domain-model.yaml`
+(only if domain changes). Lighter design conversation, same implementation flow.
 
 ```
-LLM reads:
-  1. Ticket from Jira (description, ACs, epic link)
-  2. Parent epic context (ai26/epics/{EPIC}/ if exists)
-  3. ai26/context/ (DOMAIN, ARCHITECTURE, DECISIONS, DEBT)
-  4. docs/architecture/modules/{module}/ (existing domain documentation)
-  5. docs/adr/ (existing decisions)
-  6. ai26/features/{TICKET}/ (partial work if adoption scenario)
-
-LLM evaluates against required artefacts:
-  domain-model.yaml       — can derive from Jira + context? needs conversation?
-  use-case-flows.yaml     — ACs in Jira are a start, error paths likely missing
-  error-catalog.yaml      — almost always needs conversation
-  scenarios/              — can generate from ACs if they are well-written
-  api-contracts.yaml      — needs conversation if not in ticket
-  ops-checklist.yaml      — can partially derive, needs confirmation
+/ai26-start-sdlc --fix SXG-999
+# or
+/ai26-start-sdlc SXG-999       ← if auto-detect picks fidelity 1
 ```
 
-The LLM then summarises what it has and what it needs:
+**Auto-escalation:** if the fix turns out to need new aggregates, events, API endpoints,
+or migrations, the agent escalates to fidelity 2 automatically.
 
-    LLM: I've read TICKET-123 and the repository context.
-
-         I have enough to start the design conversation. A few things to note:
-
-         - The ticket has 3 ACs but no error paths defined — we'll work those out together
-         - The ticket mentions "inbox" but that concept doesn't exist in the domain yet —
-           we'll need to define it
-         - TICKET-123's epic has no architecture context — I'll do a lightweight analysis
-           as we go and flag anything that looks like a risk
-
-         Ready to start the design conversation?
-
-### Lightweight epic analysis (when no epic architecture exists)
-
-When there is no `ai26/epics/{EPIC}/architecture.md`, the LLM does not skip the analysis —
-it performs a lighter version inline, during the design conversation:
-
-- Detects which existing aggregates are touched
-- Flags DEBT.md risk areas if the feature touches them
-- Surfaces external dependencies as they emerge from the design
-- Proposes ADRs when architectural decisions arise
-
-This is less thorough than a dedicated Phase 1b, but ensures the engineer is not
-designing blind. If a significant risk is found during this inline analysis, the LLM
-recommends pausing and running a proper epic architecture phase before continuing.
-
-### Partial adoption scenario
-
-If `ai26/features/{TICKET}/` already exists with some artefacts (engineer started previously,
-or artefacts were generated by another tool), the LLM loads them and shows what is there:
-
-    LLM: I found an existing design workspace for TICKET-123:
-
-         ✓ domain-model.yaml (last modified 2026-03-01)
-         ✓ use-case-flows.yaml (last modified 2026-03-01)
-         ✗ error-catalog.yaml — missing
-         ✗ scenarios/ — missing
-
-         Do you want to:
-         A. Continue from where this left off (generate the missing artefacts)
-         B. Review the existing artefacts first before continuing
-         C. Start fresh (existing artefacts will be overwritten after confirmation)
-
-The LLM never overwrites existing artefacts without explicit confirmation.
+See `flows.md` — Flow B (fidelity 1).
 
 ---
 
-## The invariant
+### Flow 5 — Quick fix (no design)
 
-Regardless of entry point, the design phase does not end until all configured artefacts
-exist and pass the cross-reference validation. The path to get there varies — the destination
-does not.
+For typos, dependency bumps, config changes, and obvious single-file bugs.
 
 ```
-Any entry point
-      ↓
-Bootstrap evaluation (what do I have? what do I need?)
-      ↓
-Fill the gaps (conversation, Jira, context, lightweight analysis)
-      ↓
-ai26/features/{TICKET}/ complete and valid
-      ↓
-/ai26-implement-user-story TICKET-123
+/ai26-start-sdlc --quickfix SXG-888
+# or
+/ai26-start-sdlc --quickfix "bump Spring Boot to 3.4.1"
 ```
 
-The engineer never needs to track which artefacts are missing — the LLM does that.
-The engineer's job is to make decisions. The LLM's job is to make sure all decisions
-are captured before implementation starts.
+The agent implements directly, runs tests, and commits. If it discovers the fix is
+more complex than expected, it escalates to fidelity 1 automatically.
+
+See `flows.md` — Flow C.
+
+---
+
+### Flow 6 — Migrate legacy module
+
+Six-phase migration flow from assessment through per-ticket implementation.
+
+```
+/ai26-start-sdlc --migrate chat-module
+```
+
+If a migration plan already exists in `ai26/migrations/{MODULE}/plan.md`, the skill
+detects progress and offers to resume:
+
+```
+Found migration plan for chat-module. Progress: 3/8 tickets complete.
+Next ticket: SXG-1102 — migrate ConversationRepository
+
+A. Continue from next migration ticket (SXG-1102)
+B. Start from the beginning (/ai26-assess-module chat-module)
+```
+
+See `flows.md` — Flow D for the full 6-phase breakdown.
+
+---
+
+## Fidelity
+
+Fidelity controls how much design work is done before implementation:
+
+| Fidelity | When | Artefacts |
+|---|---|---|
+| **2** (full) | New features, domain changes | Complete set: domain model, use case flows, error catalog, API contracts, events, scenarios, ops checklist |
+| **1** (minimal) | Bug fixes, small changes | Minimal set: scenarios + error catalog + domain model (only if domain changes) |
+
+`ai26-start-sdlc` infers fidelity from the Jira ticket type. You can override with
+`--fidelity 1` or `--fidelity 2` when using `--ticket`.
+
+---
+
+## Branch setup
+
+Before routing to a skill, `ai26-start-sdlc` always sets up the correct branch:
+
+1. Reads the Jira issue title and converts it to kebab-case
+2. Checks current branch against expected `{JIRA-ID}-{kebab-title}`
+3. Creates the branch (from current or main) if not already on it
+4. Pushes with `-u origin`
+
+You confirm the branch name before it is created.
+
+---
+
+## Setup verification
+
+```
+/ai26-start-sdlc --check
+```
+
+Verifies: `ai26/config.yaml`, all `ai26/context/` files, Jira MCP connectivity, and
+git remote configuration. Run this once after onboarding or when something seems off.
