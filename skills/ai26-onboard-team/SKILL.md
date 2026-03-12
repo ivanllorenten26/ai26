@@ -44,6 +44,15 @@ Report what was found:
 If all files exist, run the verification from `ai26-start-sdlc --check` and
 report what is complete. Offer to update specific files if needed.
 
+**Legacy codebase detection:** While scanning, check for signs that the codebase
+is not yet on the AI26 standard — anemic domain models, Spring annotations in service
+classes, business logic in controllers, no ArchUnit tests, H2-based tests. If 3 or
+more signals are found, surface a migration suggestion at the end of Step 2:
+
+    This looks like a legacy codebase that has not yet adopted Clean Architecture + DDD.
+    After onboarding is complete, run /ai26-assess-module {MODULE} to generate a
+    migration assessment and plan.
+
 ---
 
 ## Step 2 — Detect project structure

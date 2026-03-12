@@ -64,8 +64,9 @@ Show the auto-detected route and ask for confirmation before proceeding.
     C. Standalone feature ticket   → ai26-design-ticket --fidelity 2
     D. Bug fix / small change      → ai26-design-ticket --fidelity 1
     E. Quick fix (no design)       → ai26-implement-fix
+    F. Migrate legacy module       → ai26-assess-module → ai26-write-migration-prd → ai26-decompose-migration
 
-    Choose A–E, or provide a Jira ID.
+    Choose A–F, or provide a Jira ID.
 
 Wait for the engineer's choice before continuing.
 
@@ -153,6 +154,25 @@ Invoke `/ai26-design-ticket {TICKET-ID} --fidelity 1`.
 ### Option E — Quick fix (no design)
 
 Invoke `/ai26-implement-fix {TICKET-ID}`.
+
+### Option F — Migrate legacy module
+
+Invoke `/ai26-assess-module {MODULE}`.
+
+If a migration plan already exists in `ai26/migrations/{MODULE}/plan.md`, check for
+the next `pending` ticket and offer to resume:
+
+    Found migration plan for {MODULE}. Progress: {N}/{M} tickets complete.
+    Next ticket: {title} ({JIRA-ID or "not yet created"})
+
+    A. Continue from next migration ticket ({JIRA-ID})
+    B. Start from the beginning (/ai26-assess-module {MODULE})
+
+Also check: if any module in `ai26/config.yaml` has `migration_status: in_progress`,
+surface it proactively in the routing menu even if the engineer did not choose F:
+
+    ⚠ Module {MODULE} has a migration in progress ({N}/{M} tickets complete).
+    Run /ai26-start-sdlc to continue migration, or choose a different flow.
 
 ---
 

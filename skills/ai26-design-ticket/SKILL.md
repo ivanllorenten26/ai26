@@ -40,6 +40,28 @@ Read in this order:
 
     Reference these proactively during design to avoid repeating past mistakes.
 
+**Migration context:** Check if this ticket is part of a legacy migration plan. Look for
+`ai26/migrations/*/plan.md` files that reference this ticket's Jira ID. If found:
+- Read `ai26/migrations/{MODULE}/assessment.yaml` — for the extracted contracts
+- Read `ai26/migrations/{MODULE}/prd.md` — for the target architecture and strategy
+
+Surface the constraints before the design conversation:
+
+    Migration ticket detected — contract constraints apply:
+
+    API contracts (NON-NEGOTIABLE — must be preserved):
+      POST /conversations → 201 (same request/response shape)
+
+    Database contracts (NON-NEGOTIABLE — no destructive changes):
+      table "conversations" — columns must be preserved or migrated via Expand-Contract
+
+    Target architecture from PRD:
+      Aggregate: Conversation (Strangler Fig pattern)
+      Use cases: OpenConversation, CloseConversation
+
+    Design the new implementation to honour these constraints.
+    If a contract change is needed, explicitly call it out and confirm with the engineer first.
+
 **Fidelity inference:** If `--fidelity` was not provided, infer from the ticket:
 - Ticket type is Bug → fidelity 1
 - Title contains "fix", "patch", "bump", "update dependency" → fidelity 1
