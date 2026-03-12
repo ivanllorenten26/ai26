@@ -255,5 +255,5 @@ object ConversationMother {
 - `test-create-use-case-tests` — consumes Mother Objects for use case unit tests
 - `test-create-feature-tests` — consumes Mother Objects for BDD acceptance tests
 - `test-create-integration-tests` — consumes Mother Objects for infrastructure tests
-- `sdlc-implement-feature` Step 1.7 — invokes this skill automatically per aggregate
+- `ai26-implement-user-story` Step 1.7 — invokes this skill automatically per aggregate
 - `dev-create-domain-exception` — defines sealed error classes for which error Mother Objects may be needed

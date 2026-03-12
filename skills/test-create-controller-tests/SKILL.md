@@ -26,7 +26,7 @@ Create a controller test `{CONTROLLER_NAME}Test` in:
 
 ### Prerequisites
 
-`ControllerTest` is an abstract base class at `{TEST_SRC}/{BASE_PACKAGE_PATH}/ControllerTest.kt` that sets `@ActiveProfiles("test")`, provides `makeRequest()`, and adds shared header validation (customerId, locale, platform). If it does not exist in the module yet, use `test-create-test-configuration` to create it first, or use standalone `@WebMvcTest` with `@ActiveProfiles("test")` until the base class is available.
+`ControllerTest` is an abstract base class at `{TEST_SRC}/{BASE_PACKAGE_PATH}/ControllerTest.kt` that sets `@ActiveProfiles("test")`, provides `makeRequest()`, and adds shared header validation (customerId, locale, platform). If it does not exist in the module yet, create it manually following the pattern in the project's existing `ControllerTest.kt`, or use standalone `@WebMvcTest` with `@ActiveProfiles("test")` until the base class is available.
 
 ### Test Characteristics
 - ✅ `@WebMvcTest({ControllerName}::class)` — loads only the web layer

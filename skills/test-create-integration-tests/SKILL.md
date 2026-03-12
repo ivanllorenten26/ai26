@@ -32,7 +32,7 @@ Create integration tests for `{ADAPTER_NAME}` in:
 
 ## Implementation Rules
 
-- ✅ Annotate with `@PersistenceIntegrationTest` — the project's composed annotation that wires up TestContainers PostgreSQL, `@SpringBootTest`, `@ActiveProfiles("test")`, and the JOOQ `DSLContext`. If this annotation does not exist yet, run `test-create-test-configuration` first.
+- ✅ Annotate with `@PersistenceIntegrationTest` — the project's composed annotation that wires up TestContainers PostgreSQL, `@SpringBootTest`, `@ActiveProfiles("test")`, and the JOOQ `DSLContext`. If this annotation does not exist yet, create it manually following the pattern in the project's existing `PersistenceIntegrationTest.kt`.
 - ✅ Test save/retrieve round-trips with domain objects
 - ✅ Verify domain object integrity after persistence
 - ✅ Test query operations (findBy criteria)

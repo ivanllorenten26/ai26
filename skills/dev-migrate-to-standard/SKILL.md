@@ -255,9 +255,9 @@ Finally, suggest next steps:
 ```
 Next steps:
   If no .features/{TICKET}/ workspace exists:
-    /sdlc-backfill-design {TICKET} in {MODULE}
+    /ai26-backfill-user-story {TICKET} in {MODULE}
   If a workspace already exists:
-    /sdlc-validate-feature {TICKET}
+    /ai26-validate-user-story {TICKET}
 ```
 
 ---
@@ -273,7 +273,7 @@ Next steps:
 - ✅ Run the build and tests after applying fixes.
 - ❌ Do not modify files in `application/` (legacy module) — only `service/`.
 - ❌ Do not fix WARN items automatically.
-- ❌ Do not run `sdlc-validate-feature` or `sdlc-backfill-design` automatically — suggest them.
+- ❌ Do not run `ai26-validate-user-story` or `ai26-backfill-user-story` automatically — suggest them.
 - ❌ Do not modify design artefacts in `.features/{TICKET}/`.
 
 ---
