@@ -231,10 +231,42 @@ On failure:
     ✗ {violation 1}
     ✗ {violation 2}
 
+## Persist review report
+
+After assembling the report (pass or fail), write
+`ai26/features/{TICKET}/review-report.json` with the following structure:
+
+```json
+{
+  "ticket": "{TICKET-ID}",
+  "timestamp": "{ISO-8601 UTC}",
+  "status": "PASS",
+  "checks": {
+    "clean_architecture": { "status": "pass", "files_checked": 14, "violations": 0 },
+    "ddd_patterns": { "status": "pass", "aggregates": 2, "use_cases": 3, "violations": 0 },
+    "error_handling": { "status": "pass", "violations": 0 },
+    "test_quality": { "status": "warn", "blocking": 0, "warnings": 2, "rules": ["T-03", "T-08"] },
+    "api_contracts": { "status": "pass", "endpoints": 4, "violations": 0 },
+    "event_contracts": { "status": "pass", "events": 2, "violations": 0 },
+    "known_mistakes": { "status": "pass", "learnings_checked": 5, "violations": 0 }
+  },
+  "blocking_violations": 0,
+  "warnings": 2
+}
+```
+
+Set `status` to `"FAIL"` and populate `blocking_violations` when review does not pass.
+Failure data is as valuable as success data for adoption metrics.
+
+The individual check `status` values are `"pass"`, `"warn"`, or `"fail"`.
+
+Always write the file — even on failure.
+
 Commit on pass:
 
 ```
 git add ai26/features/{TICKET}/plan.md
+git add ai26/features/{TICKET}/review-report.json
 git commit -m "{TICKET-ID} review: automated review passing"
 git push
 ```

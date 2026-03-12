@@ -150,9 +150,37 @@ On failure:
     ✗ {violation 1}
     ✗ {violation 2}
 
+## Persist validation report
+
+After assembling the report (pass or fail), write
+`ai26/features/{TICKET}/validation-report.json` with the following structure:
+
+```json
+{
+  "ticket": "{TICKET-ID}",
+  "timestamp": "{ISO-8601 UTC}",
+  "status": "PASS",
+  "checks": {
+    "design_code_coherence": { "status": "pass", "traced": 12, "total": 12 },
+    "test_coverage": { "status": "pass", "scenarios": 8, "error_paths": 5, "tests_passing": true },
+    "ticket_design_coherence": { "status": "pass", "acs_covered": 3, "acs_total": 3 }
+  },
+  "blocking_violations": 0,
+  "warnings": 1
+}
+```
+
+Set `status` to `"FAIL"` and populate `blocking_violations` accordingly when validation
+does not pass. Failure data is as valuable as success data for adoption metrics.
+
+The individual check `status` values are `"pass"`, `"warn"`, or `"fail"`.
+
+Always write the file — even on failure.
+
 Commit on pass:
 ```
 git add ai26/features/{TICKET}/plan.md
+git add ai26/features/{TICKET}/validation-report.json
 git commit -m "{TICKET-ID} validate: all checks passing"
 git push
 ```

@@ -186,6 +186,22 @@ Promote `ai26/epics/{EPIC}/architecture.md` to `docs/architecture/epics/{EPIC}.m
 
 ---
 
+## Step 7c — Label Jira ticket
+
+Add the label `ai26-promoted` to the Jira ticket via MCP.
+
+This label makes AI26-completed tickets filterable in Jira dashboards and JQL queries:
+
+    labels = "ai26-promoted"
+
+The label is additive — it does not replace any existing labels on the ticket.
+
+If the MCP call fails, log a warning and continue — do not block the promotion commit:
+
+    ⚠ Could not add label ai26-promoted to {TICKET-ID}. Add manually in Jira if needed.
+
+---
+
 ## Step 8 — Commit promotion
 
 ```
