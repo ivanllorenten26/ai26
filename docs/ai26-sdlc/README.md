@@ -29,7 +29,8 @@ How AI26 works — configuration, artefacts, flows, validation, and distribution
 | [Overview](reference/README.md) | Principles, full flow, repository layout, document index |
 | [Configuration](reference/configuration.md) | `ai26/config.yaml` schema, `ai26/context/` files, defaults, local overrides |
 | [Entry points](reference/entry-points.md) | `/ai26-start-sdlc` routing, all entry scenarios, partial adoption |
-| [Level 1 flow](reference/level1-flow.md) | PRD (1a), epic architecture (1b), decomposition (1c) in detail |
+| [**Flows guide**](reference/flows.md) | **Three flows (A/B/C), when to use each, compound engineering model — start here** |
+| [Level 1 flow](reference/level1-flow.md) | PRD (1a), epic architecture (1b), decomposition (1c) — legacy reference |
 | [Design phase](reference/design-phase.md) | Design conversation — interaction styles, decision detection, artefact writing |
 | [Decision model](reference/decision-model.md) | Two-level decisions — context vs ADR, formats, lifecycle |
 | [Artefacts](reference/artefacts.md) | All design artefacts with YAML examples and cross-reference rules |

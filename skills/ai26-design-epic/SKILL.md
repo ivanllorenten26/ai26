@@ -1,15 +1,15 @@
 ---
 name: ai26-design-epic
-description: SDLC3 utility. Produces the full design artefact set for every ticket in an epic's plan.md in a single pass — domain model, use case flows, error catalog, API contracts, events, Gherkin scenarios, and ops checklist. By default runs in semi-automatic mode, inferring design decisions from the epic's PRD and architecture.md and only interrupting for genuinely ambiguous decisions. Use after ai26-decompose-epic when you want to complete the design phase for the entire epic before starting implementation. Accepts flags: --interactive (conversational mode, ticket by ticket), --tickets (comma-separated list to design only a subset).
-argument-hint: "[EPIC-ID] [--interactive] [--tickets TBD-1,TBD-3]"
+description: SDLC3 Phase 1b+1c+2a combined. Absorbs architecture analysis, epic decomposition, and full per-ticket design into 5 internal phases. Produces architecture.md, ADRs, monolithic epic design, per-ticket artefacts, and Jira tickets — in that order. Jira ticket creation is the last step, not a mid-pipeline checkpoint. Use after ai26-write-prd. Accepts flags: --interactive (conversational mode per ticket), --tickets (comma-separated subset), --resume (continue from a previous run).
+argument-hint: "[EPIC-ID] [--interactive] [--tickets TBD-1,TBD-3] [--resume]"
 ---
 
 # ai26-design-epic
 
-Produces the full design artefact set for every ticket in an epic in a single pass.
-Reads the epic's `plan.md`, `prd.md`, and `architecture.md`, then runs the
-`ai26-design-user-story` flow for each ticket — inferring design decisions from the
-epic context and only interrupting when a decision is genuinely ambiguous.
+Produces the complete design for an entire epic in 5 internal phases:
+architecture → monolithic domain design → slice into tickets → write artefacts → materialise Jira.
+
+Replaces the previous three-skill sequence: `ai26-design-epic-architecture` → `ai26-decompose-epic` → `ai26-design-epic`.
 
 ---
 
@@ -17,268 +17,386 @@ epic context and only interrupting when a decision is genuinely ambiguous.
 
 | Flag | Default | Behaviour |
 |---|---|---|
-| `--interactive` | off | Conversational mode: asks the same design questions as `ai26-design-user-story` for every ticket. More control, more work. |
-| `--tickets TBD-1,TBD-3` | all | Design only the listed tickets (by plan.md ID). |
+| `--interactive` | off | Conversational mode: asks design questions ticket by ticket. More control. |
+| `--tickets TBD-1,TBD-3` | all | Design only the listed tickets. |
+| `--resume` | off | Detect existing artefacts and skip completed phases. |
 
-Default mode is **semi-automatic**: the skill infers answers from PRD use cases, architecture decisions, and existing ADRs. It only pauses for decisions that cannot be resolved from context.
+Default mode is **semi-automatic**: infers design decisions from PRD and context, interrupts only when genuinely uncertain.
 
 ---
 
-## Step 1 — Load epic context
+## Phase 1 — Load context
 
 Read in this order:
-1. `ai26/epics/{EPIC}/plan.md` — required. Stop if missing: "Run /ai26-decompose-epic first."
-2. `ai26/epics/{EPIC}/prd.md` — required. Stop if missing: "Run /ai26-write-prd first."
-3. `ai26/epics/{EPIC}/architecture.md` — required. Stop if missing: "Run /ai26-design-epic-architecture first."
-4. `ai26/config.yaml`
-5. `ai26/context/DOMAIN.md`
-6. `ai26/context/ARCHITECTURE.md`
-7. `ai26/context/DECISIONS.md` (if exists)
-8. `ai26/context/DEBT.md` (if exists)
-9. `docs/adr/` — titles only
+1. `ai26/epics/{EPIC}/prd.md` — required. Stop if missing: "Run /ai26-write-prd first."
+2. `ai26/config.yaml`
+3. `ai26/context/DOMAIN.md`
+4. `ai26/context/ARCHITECTURE.md`
+5. `ai26/context/DECISIONS.md` (if exists)
+6. `ai26/context/DEBT.md` (if exists)
+7. `docs/architecture/modules/` — existing module docs (summary)
+8. `docs/adr/` — titles only
 
-Parse `plan.md` to get the ordered ticket list and their dependencies. If `--tickets` was provided, filter to only the listed IDs. Warn if a filtered ticket has unresolved dependencies not in the filtered set.
+**Resume detection:** Check what already exists:
+- `ai26/epics/{EPIC}/architecture.md` → Phase 2 already done, skip to Phase 3
+- `ai26/epics/{EPIC}/design/` → Phase 3 already done, skip to Phase 4
+- `ai26/features/{TBD-N}/` dirs → Phase 4 partially done, resume from first incomplete ticket
+- `ai26/epics/{EPIC}/plan.md` with real Jira IDs → Phase 5 done
 
-**Ticket ID resolution:** If ticket IDs in `plan.md` are real Jira IDs (e.g., `AS-1234`), read ACs and description from Jira via MCP to supplement the PRD. If IDs are placeholders (e.g., `TBD-1`), derive all context from `prd.md` and `architecture.md` — no Jira call needed.
+Show the engineer what was found:
 
-Show the plan before starting:
+    Epic: {EPIC-ID} — {title}
+    prd.md: ✓ ({date})
+    architecture.md: ✓ / ✗ missing
+    design/: ✓ / ✗ missing
+    features/: {N} ticket dirs found / ✗ none
 
-    Epic: {EPIC-ID} — {epic title}
-    Mode: semi-automatic | interactive
-    Tickets to design: {N}
+    Starting from Phase {N}.
 
-    {ID} — {title} [{risk}] {depends-on or ""}
-    {ID} — {title} [{risk}] ...
-
-    Existing artefacts:
-    {ID}: ✓ domain-model.yaml, ✓ use-case-flows.yaml, ✗ scenarios/ (incomplete)
-    {ID}: ✗ none
-
-    {N} tickets need full design, {N} need completion.
-    Proceed?
-
-Wait for confirmation before starting.
+Wait for confirmation before proceeding.
 
 ---
 
-## Step 2 — Design each ticket
+## Phase 2 — Architecture
 
-Process tickets in dependency order (tickets with no dependencies first, then those
-whose dependencies are complete). Tickets that can be designed in parallel are noted
-but still processed sequentially in this skill.
+*Absorbs: ai26-design-epic-architecture Steps 2–6*
 
-For each ticket, run the full `ai26-design-user-story` flow adapted to the selected mode.
+Silently analyse the PRD against the loaded context. Detect:
+- Which existing aggregates and bounded contexts are affected
+- New domain concepts not in `DOMAIN.md`
+- Likely database schema changes
+- DEBT.md areas touched
+- New inter-component communication patterns
+- External service dependencies
 
-### Semi-automatic mode (default)
+Open a brief architecture conversation with the engineer. Surface findings:
 
-The goal is to produce complete, correct artefacts without interrupting the engineer
-for decisions that are already answered by the epic context. Interrupt only when
-genuinely uncertain.
+    I've read the PRD for {EPIC-ID}: {title}.
 
-**For each artefact area, follow this inference strategy:**
+    Before we design, here is what I found:
+    Domain: {affected aggregates, or "new domain area"}
+    Debt:   {RISK:alto areas, or "none touched"}
+    Schema: {migrations likely / no schema changes expected}
+    ADRs:   {relevant existing ADRs, or "none"}
 
-**Domain model**
-- Map the ticket's use case to affected aggregates from `architecture.md → Affected domain concepts`.
-- Use field names, types, and lifecycle states from `architecture.md` and `prd.md → Domain model changes`.
-- Use coding rules from `ai26/config.yaml → coding_rules` (D-01 through D-14).
-- If a new aggregate is introduced that has no model in `architecture.md`, interrupt:
+    {first question or observation}
 
-      Ticket {ID}: the domain model for {concept} is not defined in architecture.md.
-      What fields and lifecycle states should it have?
+**DEBT.md RISK: alto areas require explicit acknowledgement** before continuing.
 
-**Use case flows**
-- Derive directly from the PRD use case (happy path + error paths) for this ticket.
-- Map each error path to a domain error using existing patterns in `ai26/context/DECISIONS.md`.
-- If an error path has no obvious mapping, interrupt.
+Work through these areas in conversation:
+- **Affected domain concepts** — which aggregates modified, new aggregates or BCs introduced, lifecycle states extended
+- **Database implications** — new tables/columns/indexes, migration approach
+- **Inter-component communication** — new sync calls, new async events/topics
+- **Epic-level architectural decisions** — decisions required before decomposition makes sense
+- **External dependencies** — services the epic depends on but does not own
 
-**Error catalog**
-- Derive from use case flow error paths.
-- Use existing error naming conventions from `docs/adr/` and `ai26/context/DECISIONS.md`.
-- No interruption needed for this artefact — fully derivable.
+When an architectural decision is committed:
 
-**API contracts**
-- Only for tickets with HTTP surface (controller in scope).
-- Derive endpoint path, method, request/response shape from PRD use case and existing API patterns in `ai26/context/INTEGRATIONS.md`.
-- If the HTTP contract cannot be inferred (new resource, ambiguous path), interrupt.
+    That decision is worth capturing. Should I document it as an ADR?
 
-**Events**
-- Derive from `architecture.md → New events on ConversationEvent sealed class` and PRD use case side effects.
-- No interruption needed if the event is listed in `architecture.md`.
+Write ADR immediately on confirmation:
+```
+git add docs/adr/{date}-{slug}.md
+git commit -m "{EPIC-ID} adr: {title}"
+git push
+```
 
-**Gherkin scenarios**
-- Generate one scenario per AC from the plan.md ticket entry.
-- Add at least one error path scenario per error in the use case flow.
-- Use `# Scenario:` docstring convention from coding rules T-04.
-- No interruption needed.
+When the conversation is complete, write `ai26/epics/{EPIC}/architecture.md`:
 
-**Ops checklist**
-- Derive from: Flyway migrations needed (from `architecture.md → Database implications`), new external dependencies (from `architecture.md → External dependencies`), new Kafka topics (from events artefact).
-- Flag items that require infra provisioning as `TODO: requires infra`.
-- No interruption needed.
+```markdown
+# Epic Architecture — {title}
 
-**ADR detection**
-- If a design decision arises that is not already captured in `docs/adr/` or `ai26/context/DECISIONS.md`, and it is significant enough to be worth capturing, interrupt:
+Epic: {EPIC-ID}
+Date: {YYYY-MM-DD}
 
-      Decision encountered in ticket {ID}: {description of decision}.
-      Options: {A} vs {B}.
-      My recommendation: {option} — {reason}.
-      Should I document this as an ADR, or proceed with my recommendation?
+## Affected domain concepts
 
-### Interactive mode (--interactive)
+| Concept | Status | Notes |
+|---|---|---|
+| {name} | new / modified / existing | {notes} |
 
-Run the full `ai26-design-user-story` conversational flow for each ticket, one at a time.
-After completing each ticket, confirm before moving to the next:
+## Database implications
 
-    ✓ Design complete for {ID}.
-    Ready for {next-ID} — {title}?
+{description, or "No schema changes expected."}
+
+## Debt areas touched
+
+| Area | Risk | Decision |
+|---|---|---|
+| {area} | {level} | acknowledged / will be addressed |
+
+## Epic-level decisions
+
+| Decision | ADR |
+|---|---|
+| {decision} | {adr file} |
+
+## External dependencies
+
+| Dependency | Type | Status |
+|---|---|---|
+| {name} | sync / async | confirmed / TBD |
+
+## Notes for decomposition
+
+{Sequencing constraints, rough effort signals, risks.}
+```
+
+Commit:
+```
+git add ai26/epics/{EPIC}/architecture.md
+git commit -m "{EPIC-ID} architecture: epic technical context"
+git push
+```
 
 ---
 
-## Step 3 — Write artefacts
+## Phase 3 — Monolithic design
 
-Write to `ai26/features/{TICKET-ID}/` following the schemas in
-`docs/ai26-sdlc/reference/artefacts.md`.
+*New phase — replaces per-ticket design-user-story runs*
 
-Artefact filenames:
-- `domain-model.yaml`
-- `use-case-flows.yaml`
-- `error-catalog.yaml`
-- `api-contracts.yaml` (only if HTTP surface)
-- `events.yaml` (only if events involved)
-- `glossary.yaml`
-- `scenarios/` (one `.feature` file per use case)
-- `ops-checklist.yaml`
-- `diagrams.md` (always — see Mermaid diagrams section below)
+Design the ENTIRE epic as a single coherent block before any ticket boundary exists. The domain model, events, and contracts belong to the domain — not to tickets. Slicing is a size concern handled in Phase 4.
 
-### Mermaid diagrams (`diagrams.md`)
+Write to `ai26/epics/{EPIC}/design/`. This directory is the source of truth for the full epic domain model. Individual ticket artefacts in Phase 4 are slices of this.
 
-Generate `diagrams.md` as the last artefact for every ticket. Include only the diagrams
-that add developer value for this specific ticket — skip diagram types with nothing
-meaningful to show (e.g. no sequence diagram for a ticket with no inter-component flow).
+### 3a — Domain model
 
-**Diagram selection rules:**
+Produce `ai26/epics/{EPIC}/design/domain-model.yaml` covering ALL aggregates, entities, value objects, and lifecycle states introduced or modified by this epic.
+
+Follow coding rules D-01 through D-14 from `ai26/config.yaml`.
+
+In semi-automatic mode: derive from PRD use cases + architecture.md affected concepts. Interrupt only if a new aggregate has no model in architecture.md:
+
+    The PRD introduces {concept} but architecture.md has no model for it.
+    What fields and lifecycle states should it have?
+
+### 3b — Use case flows
+
+Produce `ai26/epics/{EPIC}/design/use-case-flows.yaml` covering ALL use cases from the PRD — happy paths and error paths.
+
+Map each error path to domain errors using patterns from `ai26/context/DECISIONS.md`.
+
+### 3c — Error catalog
+
+Produce `ai26/epics/{EPIC}/design/error-catalog.yaml` covering ALL errors across all use cases.
+
+### 3d — API contracts
+
+Produce `ai26/epics/{EPIC}/design/api-contracts.yaml` for ALL HTTP endpoints introduced or modified.
+
+Derive from PRD use cases and existing API patterns in `ai26/context/INTEGRATIONS.md`. Interrupt if a new resource path cannot be inferred.
+
+### 3e — Events
+
+Produce `ai26/epics/{EPIC}/design/events.yaml` for ALL domain events introduced or modified.
+
+Derive from architecture.md and PRD use case side effects.
+
+### 3f — Glossary
+
+Produce `ai26/epics/{EPIC}/design/glossary.yaml` for ALL new domain terms introduced by the epic.
+
+### 3g — Ops checklist
+
+Produce `ai26/epics/{EPIC}/design/ops-checklist.yaml` covering:
+- Flyway migrations (from architecture.md database implications)
+- New external dependencies
+- New Kafka topics (from events)
+- Feature flags
+- Observability (metrics, alerts)
+
+Flag infra provisioning items as `TODO: requires infra`.
+
+After writing each artefact:
+
+    ✓ design/{artefact} written. Continue or "show it"?
+
+Commit the full monolithic design as one commit:
+```
+git add ai26/epics/{EPIC}/design/
+git commit -m "{EPIC-ID} design: monolithic epic design complete"
+git push
+```
+
+---
+
+## Phase 4 — Slice into tickets
+
+*Absorbs: ai26-decompose-epic Steps 2–3*
+
+The domain model, contracts, and events are already fully specified. Slicing is purely about keeping PRs reviewable and deployable independently.
+
+### 4a — Propose decomposition
+
+Analyse the monolithic design and PRD use cases. Propose an initial decomposition:
+
+    Based on the PRD and monolithic design, I suggest {N} tickets:
+
+    TBD-1 — {title}
+      Value: {what changes for a user when this is merged}
+      ACs: {from PRD use cases}
+      Domain slice: {aggregates/methods from design/domain-model.yaml}
+      API slice: {endpoints from design/api-contracts.yaml}
+      Events: {events from design/events.yaml}
+      Ops: {migrations/infra items from design/ops-checklist.yaml}
+      Risk: {BAJO/MEDIO/ALTO} — {reason}
+      Depends on: {TBD-N or "nothing"}
+
+    TBD-2 — ...
+
+    Does this decomposition make sense?
+    You can merge, split, or reorder before I distribute artefacts.
+
+Rules for decomposition:
+- Each ticket delivers **user-observable value** independently
+- Each ticket crosses all technical layers (domain, application, infrastructure, API, tests)
+- Tickets should be independently deployable when merged
+- Flag horizontal decompositions (single-layer work) and reject them
+
+### 4b — Distribute artefacts
+
+Once decomposition is confirmed, distribute the monolithic design into per-ticket directories.
+
+For each ticket TBD-N:
+- Create `ai26/features/TBD-N/`
+- Write the slice of `domain-model.yaml` relevant to this ticket's scope
+- Write the slice of `use-case-flows.yaml` for this ticket's use cases
+- Write the slice of `error-catalog.yaml` for this ticket's errors
+- Write `api-contracts.yaml` if this ticket has HTTP surface
+- Write `events.yaml` if this ticket emits/consumes events
+- Write `glossary.yaml` for terms introduced in this ticket
+- Write `ops-checklist.yaml` for migrations/infra needed by this ticket
+- Write `scenarios/` — one `.feature` file per use case with ACs as scenarios
+- Write `diagrams.md` — see diagram rules below
+
+**Scenarios generation rules:**
+- One scenario per AC from the ticket description
+- At least one error path scenario per error in use-case-flows.yaml
+- Use `# Scenario:` docstring convention from coding rules T-04
+
+**Diagram rules:**
 
 | Diagram type | Include when |
 |---|---|
 | Domain class diagram | Ticket introduces or modifies aggregates, entities, or value objects |
-| State machine diagram | Aggregate has a lifecycle with states and transitions |
-| Sequence diagram (use case) | Ticket has a use case that crosses two or more components (controller → use case → repository, or inter-context calls) |
+| State machine diagram | Aggregate has lifecycle with states and transitions |
+| Sequence diagram (use case) | Use case crosses two or more components |
 | Sequence diagram (event flow) | Ticket emits or consumes domain events |
-| Component diagram | Ticket introduces a new bounded context or a new external dependency |
-| ER diagram | Ticket has Flyway migrations that create or alter tables |
+| Component diagram | Ticket introduces new bounded context or external dependency |
+| ER diagram | Ticket has Flyway migrations |
 
-**Format for `diagrams.md`:**
+Write a `fidelity: 2` marker in each ticket's `ops-checklist.yaml` so downstream skills know the full artefact set is present.
+
+Write `plan.md`:
 
 ```markdown
-# Diagrams — {TICKET-ID}: {title}
+# Epic Plan — {EPIC-ID}
 
-## Domain class diagram
+Epic: {EPIC-ID}
+Title: {title}
+Status: in_progress
+Created: {date}
+Last updated: {date}
 
-```mermaid
-classDiagram
-  ...
+## Stories
+
+| ID | Title | Risk | Status | Branch |
+|---|---|---|---|---|
+| TBD-1 | {title} | {risk} | designed | — |
+| TBD-2 | {title} | {risk} | designed | — |
 ```
 
-## State machine — {AggregateName}
-
-```mermaid
-stateDiagram-v2
-  ...
+Commit per ticket (not per artefact):
 ```
-
-## Sequence — {Use case name}
-
-```mermaid
-sequenceDiagram
-  ...
-```
-
-## Event flow — {EventName}
-
-```mermaid
-sequenceDiagram
-  ...
-```
-
-## ER diagram
-
-```mermaid
-erDiagram
-  ...
-```
-```
-
-**Naming conventions inside diagrams:**
-- Use actual class/field names from `domain-model.yaml` — no invented names.
-- In sequence diagrams, participants are: `Client`, `Controller`, `UseCase`, `Repository`, `EventPublisher`, `ExternalService` (use the real class names when known).
-- In state diagrams, states match the `ConversationStatus` / aggregate status enum values exactly.
-- In class diagrams, show only fields and methods defined in `domain-model.yaml` for this ticket — do not copy the full aggregate if only one method changed.
-
-Commit after each ticket (not after each artefact — one commit per ticket):
-
-```
-git add ai26/features/{TICKET-ID}/
-git commit -m "{TICKET-ID} design: full artefact set"
+git add ai26/features/TBD-N/
+git commit -m "TBD-N design: full artefact set"
 git push
 ```
 
-Show progress after each ticket:
+Show progress:
 
-    ✓ {TICKET-ID} — {title}
+    ✓ TBD-1 — {title}
       domain-model.yaml, use-case-flows.yaml, error-catalog.yaml,
-      api-contracts.yaml, events.yaml, scenarios/ (N scenarios), ops-checklist.yaml,
-      diagrams.md (list diagram types generated)
-      ADRs: {list or "none"}
+      api-contracts.yaml, events.yaml, scenarios/ ({N} scenarios),
+      ops-checklist.yaml, diagrams.md ({diagram types})
       ──────────────────────────────
       {N-remaining} tickets remaining.
 
 ---
 
-## Step 4 — Cross-epic completeness check
+## Phase 5 — Materialise Jira tickets
 
-After all tickets are designed, run validation across the full set:
+*Absorbs: ai26-decompose-epic Steps 4–5*
 
-1. Every UC in `prd.md` is covered by at least one ticket's artefacts.
-2. Every domain concept in `architecture.md → Affected domain concepts` appears in at least one `domain-model.yaml`.
-3. No two tickets define conflicting models for the same aggregate (e.g., different field names for the same entity).
-4. Every open question in `prd.md` that affects a designed ticket is either resolved in the artefacts or explicitly flagged in the ops checklist.
+Jira ticket creation is the LAST step. Local artefacts are complete before any Jira call.
 
-Report violations:
+Check Jira for existing child tickets under the epic. If tickets already exist, show them and ask:
 
-    Cross-epic validation:
-    ✓ All PRD use cases covered
-    ✗ Conflict: Conversation.sessionId typed as UUID in TBD-1 but as String in TBD-3
-    ✗ Open question #6 (NFRs) affects TBD-5 — not resolved
+    {N} tickets already exist under {EPIC-ID}:
+    - {TICKET-ID}: {title} ({status})
 
-Require the engineer to resolve conflicts before closing. Flag unresolved open questions as `RISK` items in the affected ops checklists.
+    Do you want to:
+    A. Map existing Jira tickets to TBD-N dirs (rename dirs to real IDs)
+    B. Create new tickets for TBD-N dirs that have no Jira counterpart
+    C. Skip Jira creation (keep TBD-N dirs as-is)
 
----
+For each TBD-N without a Jira ticket, create in Jira via MCP:
+- Title (from plan.md)
+- Description (from PRD use case, in business language)
+- Acceptance criteria (from scenarios/ feature files)
+- Technical notes (from architecture.md, labelled as technical context)
+- Epic link
+- Risk label
+- Dependency links
 
-## Step 5 — Update plan.md
+Show progress:
 
-Update `ai26/epics/{EPIC}/plan.md` to mark designed tickets:
+    ✓ Created AS-1234: {title}
+    ✓ Created AS-1235: {title}
 
+After all tickets are created, rename `TBD-N` directories to real Jira IDs:
 ```
-| TBD-1 | Add SessionId to Conversation and Message | MEDIO | designed | {branch} |
+git mv ai26/features/TBD-1 ai26/features/AS-1234
+git mv ai26/features/TBD-2 ai26/features/AS-1235
 ```
 
+Update `plan.md` with real IDs and commit:
 ```
-git add ai26/epics/{EPIC}/plan.md
-git commit -m "{EPIC-ID} design: epic design phase complete ({N} tickets)"
+git add ai26/epics/{EPIC}/plan.md ai26/features/
+git commit -m "{EPIC-ID} decompose: {N} tickets created in Jira — TBD dirs renamed"
 git push
 ```
 
 ---
 
-## Step 6 — Close
+## Cross-epic completeness check
+
+After Phase 4 (before Phase 5), validate:
+
+1. Every UC in `prd.md` is covered by at least one ticket's use-case-flows.yaml
+2. Every domain concept in `architecture.md → Affected domain concepts` appears in at least one `domain-model.yaml`
+3. No two tickets define conflicting models for the same aggregate
+4. Every open question in `prd.md` that affects a designed ticket is resolved or flagged in ops-checklist.yaml
+
+Report violations:
+
+    Cross-epic validation:
+    ✓ All PRD use cases covered
+    ✗ Conflict: Conversation.sessionId typed as UUID in TBD-1 but String in TBD-3
+    ✗ Open question #6 (NFRs) affects TBD-5 — not resolved
+
+Require the engineer to resolve conflicts before Phase 5.
+
+---
+
+## Close
 
     Epic design complete for {EPIC-ID}.
 
     Tickets designed: {N}
-    Artefacts written: {total count}
+    Artefacts written: {total}
     ADRs written: {list or "none"}
-    Conflicts resolved: {N}
-    Open risks flagged: {N}
+    Jira tickets created: {N or "skipped"}
 
     Next step: pick a ticket and run /ai26-implement-user-story {TICKET-ID}
-    Recommended starting point: {lowest-dependency ticket with no blockers}
+    Recommended starting point: {lowest-dependency ticket}

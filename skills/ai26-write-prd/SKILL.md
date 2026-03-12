@@ -190,5 +190,5 @@ Show: `✓ committed and pushed`
 
     PRD complete for {EPIC-ID}.
 
-    Next step: /ai26-design-epic-architecture {EPIC-ID}
-    (Architect reads the PRD and produces the technical context before decomposition.)
+    Next step: /ai26-design-epic {EPIC-ID}
+    (Architecture analysis, decomposition, and full ticket design in one flow.)

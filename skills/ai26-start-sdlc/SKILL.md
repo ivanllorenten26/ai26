@@ -1,7 +1,7 @@
 ---
 name: ai26-start-sdlc
-description: SDLC3 single entry point. Detects context from a Jira ID or conversation, sets up the branch, and routes to the correct phase. Use this to start any SDLC3 flow — new epic, existing epic, new ticket, or existing ticket.
-argument-hint: [JIRA-ID] — epic or ticket ID, or omit to be prompted
+description: SDLC3 single entry point. Detects context from a Jira ID or conversation, sets up the branch, and routes to the correct flow. Use this to start any SDLC3 flow — new epic, existing epic, standalone feature, bug fix, or quick fix.
+argument-hint: "[JIRA-ID] — epic or ticket ID, or omit to be prompted"
 ---
 
 # ai26-start-sdlc
@@ -28,20 +28,44 @@ Defaults (not in config — hardcoded):
 
 ---
 
-## Step 2 — Detect Jira ID type
+## Step 2 — Detect entry point
 
 If a Jira ID was provided as argument, read the issue from Jira via MCP.
 
-Determine whether it is an **epic** or a **ticket** from the Jira issue type field.
+Determine the issue type from Jira: **epic** or **ticket**.
 
-If no argument was provided, ask:
+### If a Jira ID was provided — auto-detect routing
+
+**Epic ID provided:**
+- Check `ai26/epics/{EPIC}/` for existing artefacts
+- Route as Option A or B (see below)
+
+**Ticket ID provided:**
+- Read ticket: description, ACs, epic link, status, labels
+- Read parent epic context if exists: `ai26/epics/{EPIC}/architecture.md`, `ai26/features/` dirs
+- Auto-detect fidelity:
+
+| Ticket signals | Route |
+|---|---|
+| Epic has `architecture.md` + ticket has `ai26/features/{TICKET}/` artefacts | Skip to `/ai26-implement-user-story` |
+| Epic has `architecture.md`, ticket has no artefacts yet | Route to `/ai26-implement-user-story` (artefacts already in `ai26/features/{TICKET}/` from epic design) |
+| No epic context, ticket type is Bug or labels include `fix` | Route to Option D (fidelity 1) |
+| No epic context, ticket is a feature | Route to Option C (fidelity 2) |
+| Ticket is trivial (title contains "typo", "bump", "config") | Route to Option E |
+
+Show the auto-detected route and ask for confirmation before proceeding.
+
+### If no Jira ID was provided — show routing menu
 
     What do you want to work on?
 
-    A. New epic       — I have a business initiative to decompose into tickets
-    B. Existing epic  — I have an epic in Jira already (provide ID)
-    C. New ticket     — I have an epic and want to create a new ticket for it
-    D. Existing ticket — I have a ticket to design and implement (provide ID)
+    A. New epic                    → ai26-write-prd → ai26-design-epic
+    B. Continue existing epic      → ai26-design-epic (detects progress, resumes)
+    C. Standalone feature ticket   → ai26-design-ticket --fidelity 2
+    D. Bug fix / small change      → ai26-design-ticket --fidelity 1
+    E. Quick fix (no design)       → ai26-implement-fix
+
+    Choose A–E, or provide a Jira ID.
 
 Wait for the engineer's choice before continuing.
 
@@ -49,27 +73,26 @@ Wait for the engineer's choice before continuing.
 
 ## Step 3 — Branch setup
 
-Before doing anything else, check the current git branch.
+Before routing, check the current git branch.
 
-Read the Jira issue title. Convert to kebab-case. Build the expected branch name:
+Read the Jira issue title (or use provided description for Option E without a ticket). Convert to kebab-case. Build the expected branch name:
 ```
 {JIRA-ID}-{title-in-kebab-case}
 ```
 
 **Case 1 — Already on the correct branch:**
 
-    On branch TICKET-123-close-conversation. Continuing.
+    On branch {branch-name}. Continuing.
 
 **Case 2 — On a branch with the correct JIRA-ID prefix:**
 
-    You are on TICKET-123-old-title.
-    The Jira title is "Close Conversation" → expected: TICKET-123-close-conversation.
-    Do you want to:
+    You are on {JIRA-ID}-old-title.
+    The Jira title is "{title}" → expected: {JIRA-ID}-{kebab-title}.
     A. Continue on this branch
-    B. Create TICKET-123-close-conversation from here
-    C. Create TICKET-123-close-conversation from {main_branch}
+    B. Create {JIRA-ID}-{kebab-title} from here
+    C. Create {JIRA-ID}-{kebab-title} from {main_branch}
 
-**Case 3 — On an unrelated branch or {main_branch}:**
+**Case 3 — On an unrelated branch or main:**
 
     You are on {current-branch}.
     I'll create branch {JIRA-ID}-{title} from {current-branch | main_branch}.
@@ -78,95 +101,58 @@ Read the Jira issue title. Convert to kebab-case. Build the expected branch name
     A. Current branch ({current-branch})
     B. {main_branch}
 
-Confirm branch name with the engineer before creating:
+Confirm branch name before creating:
 
-    I'll create branch: TICKET-123-close-conversation
-    Based on Jira title: "Close Conversation"
-    From: main
-
+    I'll create branch: {JIRA-ID}-{kebab-title}
+    From: {base}
     Confirm, or provide a different title?
 
-Create the branch and push to remote on confirmation:
+Create the branch and push on confirmation:
 ```
 git checkout -b {branch-name}
-git push -u {remote} {branch-name}
+git push -u origin {branch-name}
 ```
 
 ---
 
-## Step 4 — Route to correct phase
+## Step 4 — Route to correct skill
 
 ### Option A — New epic
 
-    /ai26-write-prd
+Invoke `/ai26-write-prd` with `mode: new`.
 
-Pass: `mode: new`
-
-### Option B — Existing epic
+### Option B — Continue existing epic
 
 Read `ai26/epics/{EPIC}/` to detect what exists:
 
-| What exists | Action |
+| What exists | Route |
 |---|---|
-| Neither prd.md nor architecture.md | Start from Phase 1a → `/ai26-write-prd` |
-| prd.md exists, no architecture.md | Start from Phase 1b → `/ai26-design-epic-architecture` |
-| Both exist, open tickets in Jira | Start from Phase 1c → `/ai26-decompose-epic` |
+| Neither prd.md nor architecture.md | `/ai26-write-prd` |
+| prd.md exists, no architecture.md | `/ai26-design-epic` (Phase 2 — architecture) |
+| prd.md + architecture.md, no design/ | `/ai26-design-epic` (Phase 3 — monolithic design) |
+| design/ exists, no features/ | `/ai26-design-epic` (Phase 4 — slice into tickets) |
+| features/ exist, no Jira IDs | `/ai26-design-epic` (Phase 5 — materialise Jira) |
 | All phases done | Show summary, ask what to do next |
 
-Show the engineer what was found before routing:
+Show what was found before routing:
 
-    Found for EPIC-42:
-    ✓ ai26/epics/EPIC-42/prd.md (2026-03-07)
-    ✗ ai26/epics/EPIC-42/architecture.md — missing
+    Found for {EPIC-ID}:
+    ✓ ai26/epics/{EPIC}/prd.md (2026-03-07)
+    ✗ ai26/epics/{EPIC}/architecture.md — missing
 
-    Continuing from Phase 1b (Epic Architecture).
+    Routing to ai26-design-epic (will start from Phase 2).
 
-### Option C — New ticket
+### Option C — Standalone feature ticket (fidelity 2)
 
-Read the epic context (`ai26/epics/{EPIC}/prd.md` and `ai26/epics/{EPIC}/architecture.md` if they exist).
-Create a new Jira ticket under the epic (via MCP) after defining scope with the engineer.
-Then route to `ai26-design-user-story` with the new ticket ID.
+Invoke `/ai26-design-ticket {TICKET-ID} --fidelity 2`.
 
-### Option D — Existing ticket
+### Option D — Bug fix / small change (fidelity 1)
 
-**Bootstrap evaluation.** Read in this order:
-1. Ticket from Jira (description, ACs, epic link, status)
-2. Parent epic context (`ai26/epics/{EPIC}/` if exists)
-3. `ai26/context/` — all files present
-4. `docs/architecture/modules/` — existing module docs
-5. `docs/adr/` — existing ADRs
-6. `ai26/features/{TICKET}/` — existing artefacts if any
+Invoke `/ai26-design-ticket {TICKET-ID} --fidelity 1`.
 
-Evaluate what exists against the required artefact set from `ai26/config.yaml`:
+### Option E — Quick fix (no design)
 
-```
-Evaluating TICKET-123...
-
-Jira ticket:          ✓ read (3 ACs, no error paths defined)
-Epic context:         ✗ no epic architecture found
-/context/DOMAIN.md:   ✓
-Existing artefacts:   ✗ none
-
-Ready to start design conversation.
-Notes:
-- Ticket has no error paths — we will work those out together
-- No epic architecture — lightweight analysis will run during design
-```
-
-If `ai26/features/{TICKET}/` already has some artefacts:
-
-    Found existing design workspace for TICKET-123:
-    ✓ domain-model.yaml
-    ✓ use-case-flows.yaml
-    ✗ error-catalog.yaml — missing
-    ✗ scenarios/ — missing
-
-    Do you want to:
-    A. Continue from where this left off
-    B. Review existing artefacts first
-    C. Start fresh (existing artefacts will be overwritten after confirmation)
-
-Route to `ai26-design-user-story` after bootstrap.
+Invoke `/ai26-implement-fix {TICKET-ID}`.
 
 ---
 
@@ -176,8 +162,8 @@ If invoked as `/ai26-start-sdlc --check`:
 
 Verify:
 - `ai26/config.yaml` exists and has required fields (`stack`, `modules`)
-- The following context files exist in `ai26/context/`: `DOMAIN.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `DEBT.md`, `INTEGRATIONS.md`
-- Jira MCP is reachable (read a test issue or project info)
+- Context files exist: `ai26/context/DOMAIN.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `DEBT.md`, `INTEGRATIONS.md`
+- Jira MCP is reachable
 - Git remote is configured
 
     SDLC3 setup check
