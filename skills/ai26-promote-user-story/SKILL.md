@@ -25,6 +25,18 @@ Check validation status. If last validation did not pass:
     Promotion blocked — {TICKET-ID} has unresolved blocking violations.
     Run /ai26-validate-user-story {TICKET-ID} to see current state.
 
+Check for pending compound observations. Read `ai26/features/{TICKET}/COMPOUND.md` if it exists.
+If the file exists and contains any `| pending` observations, block promotion:
+
+    Promotion blocked — {TICKET-ID} has {N} unresolved compound observation(s):
+
+    OBS-001 | design | context | pending — {what}
+    OBS-003 | implement | skill | pending — {what}
+
+    Resolve these with /ai26-compound-resolve {TICKET-ID} before promoting.
+    (Observations capture known problems found during review — promoting with open observations
+    means the system does not learn from this ticket.)
+
 ---
 
 ## Step 2 — Load artefacts

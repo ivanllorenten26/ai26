@@ -32,6 +32,13 @@ Read in this order:
 7. `ai26/context/DEBT.md` (if exists)
 8. `docs/adr/` — titles only
 9. `ai26/features/{TICKET}/` — existing artefacts if any
+10. `ai26/context/LEARNINGS.md` (if exists) — scan for past observations relevant to this ticket's domain or bounded context. If any are found, surface them before starting the design conversation:
+
+        Past lessons relevant to this ticket:
+        OBS-007 | implement | skill — dev-create-aggregate generated public constructor (D-01)
+        OBS-012 | design | context — accountId must be AccountId(UUID) value object, not String
+
+    Reference these proactively during design to avoid repeating past mistakes.
 
 **Fidelity inference:** If `--fidelity` was not provided, infer from the ticket:
 - Ticket type is Bug → fidelity 1

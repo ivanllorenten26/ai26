@@ -23,6 +23,7 @@ Read:
 6. `ai26/features/{TICKET}/plan.md` — list of files created per subtask
 7. `ai26/config.yaml` — stack, conventions, error_handling, repository_type
 8. `ai26/context/ARCHITECTURE.md`
+9. `ai26/context/LEARNINGS.md` (if exists) — scan for past observations tagged `implement`, `rule`, or `pattern`. These represent known recurring mistakes. Add each relevant entry as an additional check against the files under review (see Check 7 below).
 
 Collect the list of implementation files from `plan.md` (files_created per subtask).
 These are the files under review.
@@ -157,6 +158,28 @@ On violation:
 
 ---
 
+## Check 7 — Known recurring mistakes (LEARNINGS.md)
+
+If `ai26/context/LEARNINGS.md` exists and contains relevant past observations, scan the
+files under review for each known pattern.
+
+For each LEARNINGS.md entry that applies to this ticket's domain or layer, check whether
+the same mistake is present in the current code.
+
+On match:
+
+    ✗ Known recurring mistake — BLOCKING
+    OBS-002: dev-create-aggregate previously generated a public constructor (D-01 violation).
+    {FileName}.kt line {N}: constructor is public.
+    This is a known past mistake — fix it before promotion.
+    Apply fix? [yes / no / explain]
+
+On no match:
+
+    ✓ Known recurring mistakes — {N} past observations checked, none found in this ticket.
+
+---
+
 ## Correction handling
 
 For each violation, the engineer chooses:
@@ -190,6 +213,7 @@ Deferred violations are included in the report and visible at promotion. They do
     Test quality                 ⚠ {N} warning(s)
     API contract alignment       ✓ {N}/{N} endpoints match
     Event contract alignment     ✓ {N}/{N} events match
+    Known recurring mistakes     ✓ {N} past observations checked — none found
 
     Blocking violations: 0
     Warnings: {N}

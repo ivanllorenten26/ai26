@@ -574,7 +574,30 @@ git push
 
 ---
 
-## Step 12 — Verify setup
+## Step 12 — Create `ai26/context/LEARNINGS.md`
+
+Create the initial institutional memory file:
+
+```markdown
+# Learnings
+
+> Institutional memory from compound feedback. Each entry records what went wrong,
+> why, and what was fixed. Read by agents to avoid repeating past mistakes.
+```
+
+This file is empty at project start. It grows over time as observations are graduated
+via `/ai26-compound-resolve`. Skills (`ai26-design-ticket`, `ai26-implement-user-story`,
+`ai26-review-user-story`) read it automatically to avoid repeating past mistakes.
+
+```
+git add ai26/context/LEARNINGS.md
+git commit -m "chore: add ai26/context/LEARNINGS.md (compound feedback)"
+git push
+```
+
+---
+
+## Step 13 — Verify setup
 
 Run the full setup check:
 
@@ -586,6 +609,7 @@ Run the full setup check:
     ✓ ai26/context/DECISIONS.md — found
     ✓ ai26/context/DEBT.md — found
     ✓ ai26/context/INTEGRATIONS.md — found
+    ✓ ai26/context/LEARNINGS.md — found
     ✓ ai26/domain/ — {N} aggregates documented
     ✓ ai26/context/diagrams/ — C1 and C4 generated
     ✓ CLAUDE.md — found

@@ -23,6 +23,13 @@ Read:
 6. `ai26/features/{TICKET}/api-contracts.yaml` (if exists)
 7. `ai26/features/{TICKET}/events.yaml` (if exists)
 8. `ai26/features/{TICKET}/scenarios/` — list of feature files
+9. `ai26/context/LEARNINGS.md` (if exists) — scan for past observations tagged `implement` or `rule` or `pattern` that are relevant to this ticket's domain. Surface any found before generating the plan:
+
+        Past lessons relevant to this implementation:
+        OBS-002 | implement | skill — dev-create-aggregate generated public constructor instead of private (D-01 violation)
+        OBS-009 | implement | pattern — JOOQ adapter must call runCatching — I-05 was missing in generated code
+
+    Apply these lessons when generating subtask detail files for the affected concerns.
 
 ### Resume scenario
 
